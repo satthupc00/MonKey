@@ -23,7 +23,8 @@ class VniEngineTest {
         assertEquals("toán", type("toan1"))
         assertEquals("hoà", type("hoa2"))
         assertEquals("hòa", type("ho2a"))
-        assertEquals("của", type("cua3"))
+        assertEquals("của", type("cu3a"))
+        assertEquals("cuả", type("cua3"))
         assertEquals("Việt", type("Viet65"))
         assertEquals("Nam", type("Nam"))
     }
