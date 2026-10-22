@@ -28,9 +28,9 @@ class Prefs(context: Context) {
     var oneLeft: Boolean          // nhớ bên của lần dùng một tay trước
         get() = sp.getBoolean("one_left", false)
         set(v) = sp.edit().putBoolean("one_left", v).apply()
-    var vibrate: Boolean
-        get() = sp.getBoolean("vibrate", true)
-        set(v) = sp.edit().putBoolean("vibrate", v).apply()
+    var vibrateStrength: Int      // 0..100, 0 = tắt rung
+        get() = sp.getInt("vibrate_strength", 50)
+        set(v) = sp.edit().putInt("vibrate_strength", v).apply()
     var autoPosture: Boolean      // tự đổi bàn phím theo tư thế máy
         get() = sp.getBoolean("auto_posture", true)
         set(v) = sp.edit().putBoolean("auto_posture", v).apply()

@@ -8,7 +8,7 @@ import kotlin.math.sin
 
 enum class Mode { NORMAL, ARC, ONE_LEFT, ONE_RIGHT }
 
-enum class KeyKind { CHAR, SHIFT, BACKSPACE, ENTER, SPACE, SYMBOLS, SETTINGS, ROUND_SWAP, ROUND_TWO }
+enum class KeyKind { CHAR, SHIFT, BACKSPACE, ENTER, SPACE, SYMBOLS, SETTINGS, PASTE, ROUND_SWAP, ROUND_TWO }
 
 /** Một phím đã đặt chỗ: tâm (cx, cy), kích thước, góc xoay (độ, theo chiều kim đồng hồ). */
 data class Key(
@@ -93,8 +93,8 @@ object Layouts {
             chars("asdfghjkl") to 0.5f,
             listOf(k("shift", KeyKind.SHIFT, 1.5f)) + chars("zxcvbnm") + k("back", KeyKind.BACKSPACE, 1.5f) to 0f,
             listOf(
-                k("sym_L", KeyKind.SYMBOLS, 1.5f), k("gear", KeyKind.SETTINGS, 1f), c(','),
-                k("space_L", KeyKind.SPACE, 4f), c('.'), k("enter", KeyKind.ENTER, 1.5f),
+                k("sym_L", KeyKind.SYMBOLS, 1.5f), k("gear", KeyKind.SETTINGS, 1f), k("paste", KeyKind.PASTE, 1f), c(','),
+                k("space_L", KeyKind.SPACE, 3f), c('.'), k("enter", KeyKind.ENTER, 1.5f),
             ) to 0f,
         )
         val out = ArrayList<Key>()
@@ -121,6 +121,7 @@ object Layouts {
         val u = c.keySize
         val gap = u * 0.12f
         val pitch = u * 1.12f
+        val flat = c.curvature < 0.01f
         val t = c.curvature.coerceAtLeast(0.02f)
         val r0 = u * 3.4f / t
         val mid = Math.toRadians(45.0) * t
@@ -133,10 +134,11 @@ object Layouts {
             for (sp in specs) {
                 val kw = sp.units * u
                 val sc = s + kw / 2
-                val phi = mid + (sc - total / 2) / r
+                val phi = if (flat) 0.0 else mid + (sc - total / 2) / r
                 out += Key(
                     sp.id, sp.kind, sp.ch,
-                    cx = (r * sin(phi)).toFloat(), cy = (-r * cos(phi)).toFloat(),
+                    cx = if (flat) sc else (r * sin(phi)).toFloat(),
+                    cy = if (flat) -i * pitch else (-r * cos(phi)).toFloat(),
                     w = kw - gap, h = u,
                     angle = Math.toDegrees(phi).toFloat(),
                     accent = sp.accent,
@@ -158,8 +160,9 @@ object Layouts {
         right = shift(right, (w - pad(c)) - br.right, bottom - br.bottom)
 
         val g = c.keySize * 1.1f
-        val gear = Key("gear", KeyKind.SETTINGS, cx = w / 2, cy = bottom - g / 2, w = g, h = g, round = true)
-        return left + right + gear
+        val gear = Key("gear", KeyKind.SETTINGS, cx = w / 2 - g * 0.7f, cy = bottom - g / 2, w = g, h = g, round = true)
+        val paste = Key("paste", KeyKind.PASTE, cx = w / 2 + g * 0.7f, cy = bottom - g / 2, w = g, h = g, round = true)
+        return left + right + gear + paste
     }
 
     // ---------------- Bàn phím một tay ----------------
@@ -214,13 +217,14 @@ object Layouts {
         val rad = 30 * c.dp
         val gapX = 28 * c.dp
         val bx = if (left) bb.right + gapX + rad else bb.left - gapX - rad
-        val step = rad * 2.4f
-        val my = bb.centerY().coerceIn(pad(c) + rad + step, h - pad(c) - rad - step)
+        val step = rad * 2.25f
+        val my = bb.centerY().coerceIn(pad(c) + rad + step * 1.5f, h - pad(c) - rad - step * 1.5f)
         val d = rad * 2
         keys = keys + listOf(
-            Key("swap", KeyKind.ROUND_SWAP, cx = bx, cy = my - step, w = d, h = d, round = true),
-            Key("two", KeyKind.ROUND_TWO, cx = bx, cy = my, w = d, h = d, round = true),
-            Key("gear", KeyKind.SETTINGS, cx = bx, cy = my + step, w = d, h = d, round = true),
+            Key("swap", KeyKind.ROUND_SWAP, cx = bx, cy = my - step * 1.5f, w = d, h = d, round = true),
+            Key("two", KeyKind.ROUND_TWO, cx = bx, cy = my - step * 0.5f, w = d, h = d, round = true),
+            Key("paste", KeyKind.PASTE, cx = bx, cy = my + step * 0.5f, w = d, h = d, round = true),
+            Key("gear", KeyKind.SETTINGS, cx = bx, cy = my + step * 1.5f, w = d, h = d, round = true),
         )
         return keys
     }

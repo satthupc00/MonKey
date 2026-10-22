@@ -8,9 +8,13 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.Typeface
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.os.Handler
 import android.os.Looper
-import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.PathInterpolator
@@ -29,6 +33,10 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         fun onKey(key: Key)
         /** dir: -1 vuốt trái, 1 vuốt phải, 2 vuốt lên. Trả về false nếu không xử lý (sẽ gõ dấu cách). */
         fun onSpaceSwipe(dir: Int): Boolean
+        /** Gõ nguyên văn (phím phụ khi giữ). */
+        fun onText(s: String)
+        /** Giữ phím xoá lâu: xoá cả từ. */
+        fun onDeleteWord()
     }
 
     companion object {
@@ -37,7 +45,13 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
             'a' to '-', 's' to '_', 'd' to '=', 'f' to '+', 'g' to '/', 'h' to '\\', 'j' to ':', 'k' to ';', 'l' to '\'',
             'z' to '"', 'x' to '[', 'c' to ']', 'v' to '?', 'b' to '~', 'n' to '<', 'm' to '>', ',' to '{', '.' to '}',
         )
+        /** Phím phụ khi giữ (giống Laban Key). */
+        val SUBS = mapOf(
+            'a' to '@', 's' to '#', 'd' to '$', 'f' to '%', 'g' to '_', 'h' to '-', 'j' to '+', 'k' to '(', 'l' to ')',
+            'z' to '*', 'x' to '"', 'c' to '\'', 'v' to ':', 'b' to ';', 'n' to '!', 'm' to '?',
+        )
         private const val ANIM_MS = 450L
+        private const val HOLD_MS = 280L
     }
 
     private val dp = resources.displayMetrics.density
@@ -50,7 +64,8 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         set(v) { field = v; invalidate() }
     var symbols = false
         set(v) { field = v; invalidate() }
-    var vibrate = true
+    /** Độ mạnh rung 0..100 (0 = tắt). */
+    var vibrateStrength = 50
 
     private var keys: List<Key> = emptyList()
 
@@ -67,13 +82,21 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     private val cKeyFn = Color.parseColor("#272A30")
     private val cKeyDown = Color.parseColor("#454A54")
     private val cBorder = Color.parseColor("#363A42")
-    private val cText = Color.parseColor("#E8E9EC")
+    private val cText = Color.parseColor("#FFFFFF")
+    private val cHint = Color.parseColor("#AEB4BE")
     private val cDim = Color.parseColor("#8C9099")
     private val cAccent = Color.parseColor("#E5383B")
 
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; color = cText }
+    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER; color = cText
+        typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+    }
+    private val hint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER; color = cHint
+        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+    }
     private val icon = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND
     }
@@ -88,22 +111,43 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         moveTo(-1f, 0f); lineTo(-0.45f, -0.7f); lineTo(1f, -0.7f); lineTo(1f, 0.7f); lineTo(-0.45f, 0.7f); close()
         moveTo(0.05f, -0.3f); lineTo(0.6f, 0.3f); moveTo(0.6f, -0.3f); lineTo(0.05f, 0.3f)
     }
+    private val pastePath = Path().apply {
+        // bảng kẹp giấy
+        addRoundRect(RectF(-0.7f, -0.75f, 0.7f, 0.95f), 0.15f, 0.15f, Path.Direction.CW)
+        addRect(RectF(-0.3f, -0.95f, 0.3f, -0.6f), Path.Direction.CW)
+        moveTo(-0.35f, 0f); lineTo(0.35f, 0f)
+        moveTo(-0.35f, 0.4f); lineTo(0.2f, 0.4f)
+    }
     private val enterPath = Path().apply {
         moveTo(0.85f, -0.75f); lineTo(0.85f, 0.2f); lineTo(-0.8f, 0.2f)
         moveTo(-0.35f, -0.25f); lineTo(-0.8f, 0.2f); lineTo(-0.35f, 0.65f)
     }
 
     // ---- touch ----
-    private class Ptr(val key: Key?, val downX: Float, val downY: Float, var done: Boolean = false)
+    private class Ptr(val key: Key?, val downX: Float, val downY: Float, var done: Boolean = false, var sub: Boolean = false)
     private val ptrs = HashMap<Int, Ptr>()
     private val handler = Handler(Looper.getMainLooper())
     private var repeatPtr = -1
+    private var repeatCount = 0
+    /** Giữ phím xoá: càng giữ lâu càng xoá nhanh, sau ~2 giây thì xoá từng từ. */
     private val repeat = object : Runnable {
         override fun run() {
             val p = ptrs[repeatPtr] ?: return
-            p.key?.let { listener.onKey(it) }
-            handler.postDelayed(this, 55)
+            val k = p.key ?: return
+            repeatCount++
+            if (repeatCount > 24) {
+                listener.onDeleteWord()
+                handler.postDelayed(this, 140)
+            } else {
+                listener.onKey(k)
+                handler.postDelayed(this, maxOf(25L, 110L - repeatCount * 6L))
+            }
         }
+    }
+    private var holdPtr = -1
+    private val hold = Runnable {
+        val p = ptrs[holdPtr] ?: return@Runnable
+        if (!p.done) { p.sub = true; buzz(); invalidate() }
     }
 
     // ================= Layout =================
@@ -184,6 +228,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         canvas.drawColor(cBg)
         val pressed = ptrs.values.mapNotNull { it.key?.id }.toHashSet()
         for (k in frameKeys()) drawKey(canvas, k, k.id in pressed)
+        for (p in ptrs.values) if (p.sub) p.key?.let { drawPopup(canvas, it) }
     }
 
     private fun drawKey(cv: Canvas, k: Key, down: Boolean) {
@@ -209,7 +254,15 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
 
         val s = minOf(k.w, k.h)
         when (k.kind) {
-            KeyKind.CHAR -> label(cv, charLabel(k.ch), s * if (k.ch.isDigit()) 0.38f else 0.44f, cText, a)
+            KeyKind.CHAR -> {
+                label(cv, charLabel(k.ch), s * 0.5f, cText, a)
+                val sub = if (symbols) null else SUBS[k.ch]
+                if (sub != null) {
+                    hint.textSize = s * 0.24f
+                    hint.alpha = a
+                    cv.drawText(sub.toString(), k.w / 2 - s * 0.2f, -k.h / 2 + s * 0.3f, hint)
+                }
+            }
             KeyKind.SPACE -> label(cv, spaceLabel(), s * 0.30f, cDim, a)
             KeyKind.SYMBOLS -> label(cv, if (symbols) "ABC" else "123", s * 0.32f, cText, a)
             KeyKind.SHIFT -> {
@@ -219,10 +272,50 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
             KeyKind.BACKSPACE -> drawIcon(cv, backPath, s * 0.28f, cText, a)
             KeyKind.ENTER -> drawIcon(cv, enterPath, s * 0.28f, cText, a)
             KeyKind.SETTINGS -> drawGear(cv, s * 0.26f, a)
+            KeyKind.PASTE -> drawIcon(cv, pastePath, s * 0.24f, cText, a)
             KeyKind.ROUND_SWAP -> label(cv, "Đổi bên", s * 0.2f, cText, a)
             KeyKind.ROUND_TWO -> label(cv, "Hai tay", s * 0.2f, cText, a)
         }
         cv.restore()
+    }
+
+    /** Bong bóng hiện phím phụ phía trên phím đang giữ. */
+    private fun drawPopup(cv: Canvas, k: Key) {
+        val sub = SUBS[k.ch] ?: return
+        val w = maxOf(k.w, k.h) * 1.1f
+        val h = k.h * 1.2f
+        val cx = k.cx.coerceIn(w / 2, width - w / 2)
+        val cy = (k.cy - k.h * 1.25f).coerceAtLeast(h / 2)
+        rect.set(cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)
+        fill.color = cKeyDown; fill.alpha = 255
+        stroke.color = cAccent; stroke.strokeWidth = 1.6f * dp; stroke.alpha = 255
+        cv.drawRoundRect(rect, 10 * dp, 10 * dp, fill)
+        cv.drawRoundRect(rect, 10 * dp, 10 * dp, stroke)
+        cv.save(); cv.translate(cx, cy)
+        label(cv, sub.toString(), h * 0.5f, cText, 255)
+        cv.restore()
+    }
+
+    /** Rung nhẹ khi chạm phím (dùng bộ rung trực tiếp, không phụ thuộc cài đặt hệ thống). */
+    private val vibrator: Vibrator? by lazy {
+        if (Build.VERSION.SDK_INT >= 31)
+            (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
+        else context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+    }
+
+    private fun buzz() {
+        val st = vibrateStrength
+        if (st <= 0) return
+        val v = vibrator ?: return
+        if (!v.hasVibrator()) return
+        try {
+            val effect = if (v.hasAmplitudeControl())
+                VibrationEffect.createOneShot(14, (st * 255 / 100).coerceIn(1, 255))
+            else
+                VibrationEffect.createOneShot((6 + st / 6).toLong(), VibrationEffect.DEFAULT_AMPLITUDE)
+            v.vibrate(effect)
+        } catch (_: Exception) {
+        }
     }
 
     private fun charLabel(ch: Char): String {
@@ -303,20 +396,25 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                 // Ngón khác vừa chạm: gõ ngay phím chữ đang giữ để gõ nhanh hai ngón không mất chữ
                 for (p in ptrs.values) {
                     val held = p.key
-                    if (!p.done && held != null && held.kind == KeyKind.CHAR) { listener.onKey(held); p.done = true }
+                    if (!p.done && held != null && held.kind == KeyKind.CHAR) { commitChar(p, held); p.done = true }
                 }
+                handler.removeCallbacks(hold)
                 val i = e.actionIndex
                 val id = e.getPointerId(i)
                 val k = hit(e.getX(i), e.getY(i))
                 ptrs[id] = Ptr(k, e.getX(i), e.getY(i))
                 if (k != null) {
-                    if (vibrate) performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    buzz()
                     if (k.kind == KeyKind.BACKSPACE) {
                         listener.onKey(k)
                         ptrs[id]?.done = true
                         repeatPtr = id
+                        repeatCount = 0
                         handler.removeCallbacks(repeat)
-                        handler.postDelayed(repeat, 420)
+                        handler.postDelayed(repeat, 380)
+                    } else if (k.kind == KeyKind.CHAR && !symbols && SUBS.containsKey(k.ch)) {
+                        holdPtr = id
+                        handler.postDelayed(hold, HOLD_MS)
                     }
                 }
                 invalidate()
@@ -326,16 +424,25 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                 val id = e.getPointerId(i)
                 val p = ptrs.remove(id)
                 if (id == repeatPtr) { handler.removeCallbacks(repeat); repeatPtr = -1 }
+                if (id == holdPtr) { handler.removeCallbacks(hold); holdPtr = -1 }
                 val k = p?.key
                 if (p != null && k != null && !p.done) {
-                    if (k.kind == KeyKind.SPACE) space(k, e.getX(i) - p.downX, e.getY(i) - p.downY)
-                    else listener.onKey(k)
+                    when (k.kind) {
+                        KeyKind.SPACE -> space(k, e.getX(i) - p.downX, e.getY(i) - p.downY)
+                        KeyKind.CHAR -> commitChar(p, k)
+                        else -> listener.onKey(k)
+                    }
                 }
                 invalidate()
             }
             MotionEvent.ACTION_CANCEL -> { cancelTouches(); invalidate() }
         }
         return true
+    }
+
+    private fun commitChar(p: Ptr, k: Key) {
+        val sub = SUBS[k.ch]
+        if (p.sub && sub != null) listener.onText(sub.toString()) else listener.onKey(k)
     }
 
     private fun space(k: Key, dx: Float, dy: Float) {
@@ -351,7 +458,9 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     private fun cancelTouches() {
         ptrs.clear()
         handler.removeCallbacks(repeat)
+        handler.removeCallbacks(hold)
         repeatPtr = -1
+        holdPtr = -1
     }
 
     override fun onDetachedFromWindow() {

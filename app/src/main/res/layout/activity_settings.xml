@@ -112,14 +112,19 @@
         </LinearLayout>
         <TextView style="@style/Section" android:text="Khác" />
         <LinearLayout style="@style/Card">
-            <Switch android:id="@+id/swVibrate" style="@style/Sw" android:text="Rung khi gõ" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView style="@style/Label" android:layout_width="0dp" android:layout_weight="1" android:text="Độ mạnh rung" />
+                <TextView android:id="@+id/valVibrate" style="@style/Value" />
+            </LinearLayout>
+            <SeekBar android:id="@+id/seekVibrate" style="@style/Seek" />
+            <TextView style="@style/Hint" android:text="0 = tắt rung" />
         </LinearLayout>
         <LinearLayout style="@style/Card">
             <Switch android:id="@+id/swPosture" style="@style/Sw" android:text="Gập nửa máy → bàn phím thường" />
             <TextView style="@style/Hint" android:text="Gập (màn ngoài) luôn dùng bàn phím thường; mở phẳng dùng vòng cung" />
         </LinearLayout>
         <TextView style="@style/Section" android:text="Cách dùng" />
-        <TextView style="@style/Help" android:text="• Vuốt trái / phải trên phím cách: thu về bàn phím một tay bên đó.\n• Ở chế độ một tay: vuốt sang bên kia để đổi bên, vuốt lên để về hai tay.\n• Nút tròn cạnh bàn phím một tay: Đổi bên / Hai tay / Cài đặt.\n• VNI: 1 sắc · 2 huyền · 3 hỏi · 4 ngã · 5 nặng · 6 mũ · 7 móc · 8 trăng · 9 đ · 0 xoá dấu.\n• Dấu đặt lên nguyên âm gần con trỏ nhất. Muốn “hòa”: gõ ho2a.\n• Gõ số thường: bấm số 2 lần (vd a11 → a1) hoặc dùng phím 123." />
+        <TextView style="@style/Help" android:text="• Vuốt trái / phải trên phím cách: thu về bàn phím một tay bên đó.\n• Ở chế độ một tay: vuốt sang bên kia để đổi bên, vuốt lên để về hai tay.\n• Nút tròn cạnh bàn phím một tay: Đổi bên / Hai tay / Dán / Cài đặt.\n• VNI: 1 sắc · 2 huyền · 3 hỏi · 4 ngã · 5 nặng · 6 mũ · 7 móc · 8 trăng · 9 đ · 0 xoá dấu.\n• Dấu đặt lên nguyên âm gần con trỏ nhất. Muốn “hòa”: gõ ho2a.\n• Gõ số thường: bấm số 2 lần (vd a11 → a1) hoặc dùng phím 123.\n• Giữ phím chữ một chút để gõ ký tự phụ (góc trên phải phím).\n• Giữ phím xoá: xoá nhanh dần, giữ lâu sẽ xoá từng từ.\n• Nút bảng kẹp: dán nội dung đã copy." />
 
         <Button android:id="@+id/btnUpdate" style="@style/Btn" android:layout_marginTop="24dp" android:text="Kiểm tra bản cập nhật" />
     </LinearLayout>

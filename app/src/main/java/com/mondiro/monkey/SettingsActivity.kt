@@ -41,7 +41,7 @@ class SettingsActivity : Activity() {
         slider(R.id.seekOneLift, R.id.valOneLift, 0, 200, prefs.oneLift, " dp") { prefs.oneLift = it }
         toggle(R.id.swDup, prefs.dupMiddle) { prefs.dupMiddle = it }
         toggle(R.id.swOneCurve, prefs.oneCurved) { prefs.oneCurved = it }
-        toggle(R.id.swVibrate, prefs.vibrate) { prefs.vibrate = it }
+        slider(R.id.seekVibrate, R.id.valVibrate, 0, 100, prefs.vibrateStrength, "") { prefs.vibrateStrength = it }
         toggle(R.id.swPosture, prefs.autoPosture) { prefs.autoPosture = it }
 
         checkUpdate(manual = false)

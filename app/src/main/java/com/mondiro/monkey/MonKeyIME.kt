@@ -1,5 +1,6 @@
 package com.mondiro.monkey
 
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.Configuration
@@ -71,6 +72,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         kv?.symbols = false
         kv?.shift = ShiftState.OFF
         updatePosture(animate = false)
+        apply(animate = false) // luôn áp cài đặt mới nhất mỗi lần bàn phím hiện
         autoCap()
     }
 
@@ -110,7 +112,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
 
     private fun apply(animate: Boolean) {
         val v = kv ?: return
-        v.vibrate = prefs.vibrate
+        v.vibrateStrength = prefs.vibrateStrength
         v.configure(mode, prefs.layoutConfig(resources.displayMetrics.density), animate)
     }
 
@@ -141,6 +143,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
                 lastShiftTap = now
             }
             KeyKind.SYMBOLS -> v.symbols = !v.symbols
+            KeyKind.PASTE -> paste()
             KeyKind.SETTINGS -> startActivity(
                 Intent(this, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
@@ -169,6 +172,28 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
             Mode.NORMAL -> return false
         }
         return true
+    }
+
+    override fun onText(s: String) = commit(s)
+
+    /** Xoá cả từ (và khoảng trắng) ngay trước con trỏ. */
+    override fun onDeleteWord() {
+        val ic = currentInputConnection ?: return
+        val before = ic.getTextBeforeCursor(64, 0)?.toString() ?: return
+        if (before.isEmpty()) return
+        var i = before.length
+        while (i > 0 && before[i - 1].isWhitespace()) i--
+        while (i > 0 && before[i - 1].isLetterOrDigit()) i--
+        if (i == before.length) i-- // ký tự đặc biệt: xoá 1 ký tự
+        ic.deleteSurroundingText(before.length - i, 0)
+    }
+
+    private fun paste() {
+        val cm = getSystemService(CLIPBOARD_SERVICE) as? ClipboardManager ?: return
+        val clip = cm.primaryClip ?: return
+        if (clip.itemCount == 0) return
+        val text = clip.getItemAt(0).coerceToText(this)?.toString() ?: return
+        if (text.isNotEmpty()) commit(text)
     }
 
     private fun typeChar(ch: Char) {

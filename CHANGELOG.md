@@ -1,5 +1,15 @@
 # Nhật ký thay đổi MonKey
 
+## v1.1.0
+**Phím phụ, dán clipboard, rung, xoá nhanh**
+
+- Giữ phím chữ một chút để gõ ký tự phụ (giống Laban Key): a@ s# d$ f% g_ h- j+ k( l) · z* x" c' v: b; n! m?. Ký tự phụ hiện nhỏ ở góc trên phải mỗi phím.
+- Chữ trên phím đậm, to và trắng rõ hơn.
+- Thêm nút dán (paste) nội dung đã copy: ở giữa bàn phím vòng cung, cạnh bàn phím một tay và hàng dưới bàn phím thường.
+- Sửa rung: dùng bộ rung trực tiếp, thêm thanh chỉnh độ mạnh rung (0 = tắt).
+- Giữ phím xoá: xoá nhanh dần, giữ lâu (~2 giây) sẽ xoá từng từ.
+- Độ cong = 0 giờ phẳng hoàn toàn; cài đặt được áp lại mỗi lần bàn phím hiện lên.
+
 ## v1.0.0
 **Bản đầu tiên – bàn phím vòng cung cho Z Fold 7**
 
