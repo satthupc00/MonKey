@@ -49,4 +49,46 @@ class VniEngineTest {
         assertEquals("tôi", type("to6i"))
         assertEquals("ta", type("ta10"))
     }
+
+    /** Gõ kiểu tự bỏ dấu đúng chỗ, giống MonKeyIME. */
+    private fun smart(keys: String, oldStyle: Boolean = true): String {
+        val sb = StringBuilder()
+        for (c in keys) {
+            var i = sb.length
+            while (i > 0 && sb[i - 1].isLetter()) i--
+            if (c.isDigit()) {
+                val r = VniEngine.applySmart(sb.substring(i), c, oldStyle)
+                if (r == null) sb.append(c) else sb.replace(i, sb.length, r)
+            } else {
+                sb.append(c)
+                if (c.isLetter()) sb.replace(i, sb.length, VniEngine.reposition(sb.substring(i), oldStyle))
+            }
+        }
+        return sb.toString()
+    }
+
+    @Test fun smartTones() {
+        assertEquals("hòa", smart("hoa2"))
+        assertEquals("hoà", smart("hoa2", oldStyle = false))
+        assertEquals("hoàn", smart("hoan2"))
+        assertEquals("hoàn", smart("hoa2n"))
+        assertEquals("toán", smart("toan1"))
+        assertEquals("mùa", smart("mua2"))
+        assertEquals("người", smart("nguoi72"))
+        assertEquals("người", smart("nguoi27"))
+        assertEquals("tiếng", smart("tieng61"))
+        assertEquals("Việt", smart("Viet65"))
+        assertEquals("quý", smart("quy1"))
+        assertEquals("quốc", smart("quoc61"))
+        assertEquals("thúy", smart("thuy1"))
+        assertEquals("thuý", smart("thuy1", oldStyle = false))
+        assertEquals("khuỷu", smart("khuyu3"))
+        assertEquals("già", smart("gia2"))
+        assertEquals("gì", smart("gi2"))
+        assertEquals("giường", smart("giuong72"))
+        assertEquals("mứa", smart("mua71"))
+        assertEquals("khỏe", smart("khoe3"))
+        assertEquals("hoa2", smart("hoa22"))
+        assertEquals("máy", smart("may1"))
+    }
 }

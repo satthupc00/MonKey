@@ -1,5 +1,14 @@
 # Nhật ký thay đổi MonKey
 
+## v1.4.0
+**Tự bỏ dấu đúng chỗ, thu hẹp bàn phím tách đôi**
+
+- Tự bỏ dấu đúng chỗ: gõ dấu sau cả chữ vẫn đúng (toan1 → toán, nguoi72 → người), dấu tự dời khi gõ tiếp (hoa2n → hoàn). Chọn kiểu cũ (hòa, thúy) hoặc kiểu mới (hoà, thuý) trong Cài đặt.
+- Thêm "Bề rộng phím" (60–100%, mặc định 85%) để thu hẹp mỗi nửa bàn phím tách đôi, ngón cái đỡ phải với xa.
+- Bỏ tự viết hoa đầu câu.
+- Mặc định mới: độ cong 5, cỡ phím 40, nhích vào trong 39, độ rung 88 (tự áp khi cập nhật).
+- Thêm nút "Đặt lại mặc định" trong Cài đặt.
+
 ## v1.3.0
 **Bàn phím ký hiệu 2 trang giống Laban**
 

@@ -69,6 +69,16 @@
         <Button android:id="@+id/btnEnable" style="@style/Btn" android:text="1. Bật bàn phím MonKey" />
         <Button android:id="@+id/btnPick" style="@style/Btn" android:text="2. Chọn MonKey làm bàn phím" />
         <EditText android:id="@+id/test" style="@style/Input" android:hint="Gõ thử ở đây… (vd: Vie65t Nam)" />
+        <TextView style="@style/Section" android:text="Gõ tiếng Việt" />
+        <LinearLayout style="@style/Card">
+            <Switch android:id="@+id/swSmartTone" style="@style/Sw" android:text="Tự bỏ dấu đúng chỗ" />
+            <TextView style="@style/Hint" android:text="Gõ dấu ở đâu cũng được, dấu tự nằm đúng chỗ (toan1 → toán, hoa2n → hoàn)" />
+        </LinearLayout>
+        <LinearLayout style="@style/Card">
+            <Switch android:id="@+id/swOldStyle" style="@style/Sw" android:text="Kiểu bỏ dấu cũ" />
+            <TextView style="@style/Hint" android:text="Bật: hòa, thúy, khỏe · Tắt: hoà, thuý, khoẻ" />
+        </LinearLayout>
+
         <TextView style="@style/Section" android:text="Bàn phím vòng cung (hai tay)" />
         <LinearLayout style="@style/Card">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
@@ -92,6 +102,14 @@
             </LinearLayout>
             <SeekBar android:id="@+id/seekLift" style="@style/Seek" />
             <TextView style="@style/Hint" android:text="Dời gốc quạt lên cao hơn" />
+        </LinearLayout>
+        <LinearLayout style="@style/Card">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView style="@style/Label" android:layout_width="0dp" android:layout_weight="1" android:text="Bề rộng phím" />
+                <TextView android:id="@+id/valWidth" style="@style/Value" />
+            </LinearLayout>
+            <SeekBar android:id="@+id/seekWidth" style="@style/Seek" />
+            <TextView style="@style/Hint" android:text="Thu hẹp mỗi nửa bàn phím để ngón cái với tới hết các phím" />
         </LinearLayout>
         <LinearLayout style="@style/Card">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
@@ -132,9 +150,10 @@
             <TextView style="@style/Hint" android:text="Gập (màn ngoài) luôn dùng bàn phím thường; mở phẳng dùng vòng cung" />
         </LinearLayout>
         <TextView style="@style/Section" android:text="Cách dùng" />
-        <TextView style="@style/Help" android:text="• Vuốt trái / phải trên phím cách: thu về bàn phím một tay bên đó.\n• Ở chế độ một tay: vuốt sang bên kia để đổi bên, vuốt lên để về hai tay.\n• Nút tròn cạnh bàn phím một tay: Đổi bên / Hai tay / Thu gọn / Dán / Cài đặt.\n• Giữ phím dấu phẩy: mở cài đặt · giữ phím dấu chấm: dán.\n• Nút bàn phím có mũi tên xuống: thu gọn bàn phím.\n• VNI: 1 sắc · 2 huyền · 3 hỏi · 4 ngã · 5 nặng · 6 mũ · 7 móc · 8 trăng · 9 đ · 0 xoá dấu.\n• Dấu đặt lên nguyên âm gần con trỏ nhất. Muốn “hòa”: gõ ho2a.\n• Gõ số thường: bấm số 2 lần (vd a11 → a1) hoặc dùng phím 123.\n• Giữ phím chữ một chút để gõ ký tự phụ (góc trên phải phím).\n• Giữ phím xoá: xoá nhanh dần, giữ lâu sẽ xoá từng từ.\n• Nút bảng kẹp: dán nội dung đã copy." />
+        <TextView style="@style/Help" android:text="• Vuốt trái / phải trên phím cách: thu về bàn phím một tay bên đó.\n• Ở chế độ một tay: vuốt sang bên kia để đổi bên, vuốt lên để về hai tay.\n• Nút tròn cạnh bàn phím một tay: Đổi bên / Hai tay / Thu gọn / Dán / Cài đặt.\n• Giữ phím dấu phẩy: mở cài đặt · giữ phím dấu chấm: dán.\n• Nút bàn phím có mũi tên xuống: thu gọn bàn phím.\n• VNI: 1 sắc · 2 huyền · 3 hỏi · 4 ngã · 5 nặng · 6 mũ · 7 móc · 8 trăng · 9 đ · 0 xoá dấu.\n• Tự bỏ dấu đúng chỗ: gõ dấu sau cả chữ cũng được (toan1 → toán). Tắt tính năng này thì dấu đặt lên nguyên âm gần con trỏ nhất.\n• Gõ số thường: bấm số 2 lần (vd a11 → a1) hoặc dùng phím 123.\n• Giữ phím chữ một chút để gõ ký tự phụ (góc trên phải phím).\n• Giữ phím xoá: xoá nhanh dần, giữ lâu sẽ xoá từng từ.\n• Nút bảng kẹp: dán nội dung đã copy." />
 
-        <Button android:id="@+id/btnUpdate" style="@style/Btn" android:layout_marginTop="24dp" android:text="Kiểm tra bản cập nhật" />
+        <Button android:id="@+id/btnReset" style="@style/Btn" android:layout_marginTop="24dp" android:text="Đặt lại mặc định" />
+        <Button android:id="@+id/btnUpdate" style="@style/Btn" android:text="Kiểm tra bản cập nhật" />
     </LinearLayout>
     </ScrollView>
 

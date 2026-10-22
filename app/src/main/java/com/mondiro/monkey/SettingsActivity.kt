@@ -38,9 +38,20 @@ class SettingsActivity : Activity() {
         slider(R.id.seekCurve, R.id.valCurve, 0, 100, prefs.curvature, "") { prefs.curvature = it }
         slider(R.id.seekSize, R.id.valSize, 30, 56, prefs.keySize, " dp") { prefs.keySize = it }
         slider(R.id.seekLift, R.id.valLift, 0, 150, prefs.lift, " dp") { prefs.lift = it }
+        slider(R.id.seekWidth, R.id.valWidth, 60, 100, prefs.keyWidth, "%") { prefs.keyWidth = it }
         slider(R.id.seekInset, R.id.valInset, 0, 120, prefs.inset, " dp") { prefs.inset = it }
         slider(R.id.seekOneLift, R.id.valOneLift, 0, 200, prefs.oneLift, " dp") { prefs.oneLift = it }
         toggle(R.id.swDup, prefs.dupMiddle) { prefs.dupMiddle = it }
+        toggle(R.id.swSmartTone, prefs.smartTone) { prefs.smartTone = it }
+        toggle(R.id.swOldStyle, prefs.oldToneStyle) { prefs.oldToneStyle = it }
+        findViewById<Button>(R.id.btnReset).setOnClickListener {
+            AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle("Đặt lại mặc định?")
+                .setMessage("Độ cong 5 · Cỡ phím 40 · Bề rộng phím 85% · Nhích vào trong 39 · Độ rung 88 …")
+                .setPositiveButton("Đặt lại") { _, _ -> prefs.resetDefaults(); recreate() }
+                .setNegativeButton("Huỷ", null)
+                .show()
+        }
         toggle(R.id.swOneCurve, prefs.oneCurved) { prefs.oneCurved = it }
         slider(R.id.seekVibrate, R.id.valVibrate, 0, 100, prefs.vibrateStrength, "") { prefs.vibrateStrength = it }
         toggle(R.id.swPosture, prefs.autoPosture) { prefs.autoPosture = it }

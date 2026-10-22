@@ -73,7 +73,6 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         kv?.shift = ShiftState.OFF
         updatePosture(animate = false)
         apply(animate = false) // luôn áp cài đặt mới nhất mỗi lần bàn phím hiện
-        autoCap()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -130,9 +129,9 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         val v = kv ?: return
         when (key.kind) {
             KeyKind.CHAR -> if (v.symbols) commit(v.outputOf(key).toString()) else typeChar(key.ch)
-            KeyKind.SPACE -> { commit(" "); autoCap() }
-            KeyKind.BACKSPACE -> { sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL); autoCap() }
-            KeyKind.ENTER -> { enter(); autoCap() }
+            KeyKind.SPACE -> commit(" ")
+            KeyKind.BACKSPACE -> sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+            KeyKind.ENTER -> enter()
             KeyKind.SHIFT -> if (v.symbols) {
                 v.symPage = if (v.symPage == 1) 2 else 1 // lật trang ký hiệu
             } else {
@@ -207,6 +206,26 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         }
         commit((if (v.shift != ShiftState.OFF) ch.uppercaseChar() else ch).toString())
         if (v.shift == ShiftState.ONCE) v.shift = ShiftState.OFF
+        if (prefs.smartTone) fixTonePosition()
+    }
+
+    /** Sau khi gõ thêm chữ: dời dấu thanh về đúng chỗ (vd "hòa" + n -> "hoàn"). */
+    private fun fixTonePosition() {
+        val ic = currentInputConnection ?: return
+        val word = wordBeforeCursor(ic.getTextBeforeCursor(32, 0)?.toString() ?: return)
+        if (word.isEmpty()) return
+        val fixed = VniEngine.reposition(word, prefs.oldToneStyle)
+        if (fixed == word) return
+        ic.beginBatchEdit()
+        ic.deleteSurroundingText(word.length, 0)
+        ic.commitText(fixed, 1)
+        ic.endBatchEdit()
+    }
+
+    private fun wordBeforeCursor(before: String): String {
+        var i = before.length
+        while (i > 0 && before[i - 1].isLetter()) i--
+        return before.substring(i)
     }
 
     /** Phím số: thử bỏ dấu VNI cho chữ ngay trước con trỏ, không được thì gõ số. */
@@ -221,7 +240,8 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         var i = before.length
         while (i > 0 && before[i - 1].isLetter()) i--
         val word = before.substring(i)
-        val result = VniEngine.apply(word, d)
+        val result = if (prefs.smartTone) VniEngine.applySmart(word, d, prefs.oldToneStyle)
+        else VniEngine.apply(word, d)
         if (result == null) {
             ic.commitText(d.toString(), 1)
         } else {
@@ -253,13 +273,4 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         }
     }
 
-    /** Tự viết hoa đầu câu (nếu ô nhập cho phép). */
-    private fun autoCap() {
-        val v = kv ?: return
-        if (v.shift == ShiftState.LOCK) return
-        val ic = currentInputConnection ?: return
-        val type = currentInputEditorInfo?.inputType ?: 0
-        val caps = type != 0 && ic.getCursorCapsMode(type) != 0
-        v.shift = if (caps) ShiftState.ONCE else ShiftState.OFF
-    }
 }

@@ -32,6 +32,7 @@ data class LayoutConfig(
     val keySize: Float,     // px
     val lift: Float,        // px, nâng bàn phím hai tay
     val inset: Float,       // px, nhích hai nửa bàn phím vào trong
+    val keyWidth: Float,    // tỉ lệ bề rộng phím khi tách đôi (0.6..1)
     val dupMiddle: Boolean,
     val oneCurved: Boolean,
     val oneLift: Float,     // px, nâng bàn phím một tay
@@ -151,18 +152,19 @@ object Layouts {
         val out = ArrayList<Key>()
         rows.forEachIndexed { i, row ->
             val specs = row.filter { c.dupMiddle || !it.accent }
-            val total = specs.sumOf { it.units.toDouble() } * u
+            val uw = u * c.keyWidth
+            val total = specs.sumOf { it.units.toDouble() } * uw
             val r = r0 + i * pitch
             var s = 0f
             for (sp in specs) {
-                val kw = sp.units * u
+                val kw = sp.units * uw
                 val sc = s + kw / 2
                 val phi = if (flat) 0.0 else mid + (sc - total / 2) / r
                 out += Key(
                     sp.id, sp.kind, sp.ch,
                     cx = if (flat) sc else (r * sin(phi)).toFloat(),
                     cy = if (flat) -i * pitch else (-r * cos(phi)).toFloat(),
-                    w = kw - gap, h = u,
+                    w = kw - gap * c.keyWidth, h = u,
                     angle = Math.toDegrees(phi).toFloat(),
                     accent = sp.accent,
                 )
