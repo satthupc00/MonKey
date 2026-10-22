@@ -69,7 +69,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        kv?.symbols = false
+        kv?.symPage = 0
         kv?.shift = ShiftState.OFF
         updatePosture(animate = false)
         apply(animate = false) // luôn áp cài đặt mới nhất mỗi lần bàn phím hiện
@@ -129,11 +129,13 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
     override fun onKey(key: Key) {
         val v = kv ?: return
         when (key.kind) {
-            KeyKind.CHAR -> typeChar(key.ch)
+            KeyKind.CHAR -> if (v.symbols) commit(v.outputOf(key).toString()) else typeChar(key.ch)
             KeyKind.SPACE -> { commit(" "); autoCap() }
             KeyKind.BACKSPACE -> { sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL); autoCap() }
             KeyKind.ENTER -> { enter(); autoCap() }
-            KeyKind.SHIFT -> {
+            KeyKind.SHIFT -> if (v.symbols) {
+                v.symPage = if (v.symPage == 1) 2 else 1 // lật trang ký hiệu
+            } else {
                 val now = SystemClock.uptimeMillis()
                 v.shift = when {
                     v.shift == ShiftState.OFF -> ShiftState.ONCE
@@ -142,7 +144,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
                 }
                 lastShiftTap = now
             }
-            KeyKind.SYMBOLS -> v.symbols = !v.symbols
+            KeyKind.SYMBOLS -> v.symPage = if (v.symbols) 0 else 1
             KeyKind.PASTE -> paste()
             KeyKind.HIDE -> requestHideSelf(0)
             KeyKind.SETTINGS -> startActivity(
@@ -199,10 +201,6 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
 
     private fun typeChar(ch: Char) {
         val v = kv ?: return
-        if (v.symbols) {
-            commit((KeyboardView.SYMBOLS[ch] ?: ch).toString())
-            return
-        }
         if (ch.isDigit()) {
             typeVniDigit(ch)
             return

@@ -1,5 +1,14 @@
 # Nhật ký thay đổi MonKey
 
+## v1.3.0
+**Bàn phím ký hiệu 2 trang giống Laban**
+
+- Phím ?123 mở trang ký hiệu 1: ~ ` | • √ π ÷ × ¶ Δ / @ # $ % & - + ( ) / / * " ' : ; ! ? và _ . cạnh phím cách.
+- Phím =\< (vị trí shift) lật sang trang 2: £ ¢ € ¥ ^ ° = { } … / \ © ® ™ % [ ] và < > cạnh phím cách; phím ?123 để quay lại trang 1, ABC để về bàn phím chữ.
+- Dấu phẩy và dấu chấm cạnh phím cách giữ nguyên (không còn đổi thành { }).
+- Màn ngoài: nút thu gọn bàn phím chuyển xuống dải mỏng phía dưới, phím cách rộng hơn.
+- Màn trong: mặc định nhích hai nửa bàn phím vào trong 28dp (chỉnh trong Cài đặt → Nhích vào trong).
+
 ## v1.2.0
 **Tông màu Laban, chữ dày hơn, thu gọn bàn phím**
 

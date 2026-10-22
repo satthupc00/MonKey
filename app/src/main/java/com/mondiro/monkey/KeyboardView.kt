@@ -40,11 +40,14 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     }
 
     companion object {
-        val SYMBOLS = mapOf(
-            'q' to '!', 'w' to '@', 'e' to '#', 'r' to '$', 't' to '%', 'y' to '^', 'u' to '&', 'i' to '*', 'o' to '(', 'p' to ')',
-            'a' to '-', 's' to '_', 'd' to '=', 'f' to '+', 'g' to '/', 'h' to '\\', 'j' to ':', 'k' to ';', 'l' to '\'',
-            'z' to '"', 'x' to '[', 'c' to ']', 'v' to '?', 'b' to '~', 'n' to '<', 'm' to '>', ',' to '{', '.' to '}',
-        )
+        /** Ký hiệu đặt theo vị trí phím chữ (dùng cho bàn phím vòng cung / một tay). */
+        fun symbolFor(page: Int, ch: Char): Char? {
+            val pg = Layouts.SYM_PAGES[page - 1]
+            "qwertyuiop".indexOf(ch).let { if (it >= 0) return pg[0][it] }
+            "asdfghjkl".indexOf(ch).let { if (it >= 0) return pg[1][it] }
+            "zxcvbnm".indexOf(ch).let { if (it >= 0) return pg[2][it] }
+            return null
+        }
         /** Phím phụ khi giữ (giống Laban Key). */
         val SUBS = mapOf(
             'a' to '@', 's' to '#', 'd' to '$', 'f' to '%', 'g' to '_', 'h' to '-', 'j' to '+', 'k' to '(', 'l' to ')',
@@ -64,8 +67,15 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         private set
     var shift = ShiftState.OFF
         set(v) { field = v; invalidate() }
-    var symbols = false
-        set(v) { field = v; invalidate() }
+    /** 0 = bàn phím chữ, 1 / 2 = trang ký hiệu. */
+    var symPage = 0
+        set(v) {
+            if (field == v) return
+            field = v
+            // Bàn phím thường có bố cục ký hiệu riêng (hàng 2 có 10 phím) nên phải dựng lại
+            if (mode == Mode.NORMAL && width > 0) rebuild(false) else invalidate()
+        }
+    val symbols get() = symPage > 0
     /** Độ mạnh rung 0..100 (0 = tắt). */
     var vibrateStrength = 50
 
@@ -130,6 +140,9 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         moveTo(-0.35f, 0f); lineTo(0.35f, 0f)
         moveTo(-0.35f, 0.4f); lineTo(0.2f, 0.4f)
     }
+    private val chevronPath = Path().apply {
+        moveTo(-0.7f, -0.35f); lineTo(0f, 0.35f); lineTo(0.7f, -0.35f)
+    }
     private val enterPath = Path().apply {
         moveTo(0.85f, -0.75f); lineTo(0.85f, 0.2f); lineTo(-0.8f, 0.2f)
         moveTo(-0.35f, -0.25f); lineTo(-0.8f, 0.2f); lineTo(-0.35f, 0.65f)
@@ -188,7 +201,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     }
 
     private fun rebuild(animate: Boolean) {
-        val newKeys = Layouts.build(mode, width.toFloat(), height.toFloat(), config)
+        val newKeys = Layouts.build(mode, width.toFloat(), height.toFloat(), config, symPage)
         animator?.cancel()
         cancelTouches()
         if (!animate || keys.isEmpty()) {
@@ -249,6 +262,12 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         cv.save()
         cv.translate(k.cx, k.cy)
         cv.rotate(k.angle)
+        if (k.plain) {
+            // Nút thu gọn ở dải dưới: chỉ vẽ mũi tên, không nền
+            drawIcon(cv, chevronPath, k.h * 0.32f, if (down) cText else cHint, a, width = 2.4f)
+            cv.restore()
+            return
+        }
 
         val fn = k.kind != KeyKind.CHAR && k.kind != KeyKind.SPACE
         fill.color = if (down) cKeyDown else if (fn) cKeyFn else cKey
@@ -264,24 +283,26 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         val s = minOf(k.w, k.h)
         when (k.kind) {
             KeyKind.CHAR -> {
-                label(cv, charLabel(k.ch), s * 0.6f, cText, a)
+                label(cv, labelOf(k), s * 0.6f, cText, a)
                 val hx = k.w / 2 - s * 0.2f
                 val hy = -k.h / 2 + s * 0.24f
-                val action = ACTION_SUBS[k.ch]
-                val sub = if (symbols) null else SUBS[k.ch]
-                if (action != null) {
+                val sub = subOf(k)
+                if (sub?.action != null) {
                     cv.save(); cv.translate(hx, hy)
-                    drawActionIcon(cv, action, s * 0.12f, cHint, a)
+                    drawActionIcon(cv, sub.action, s * 0.12f, cHint, a)
                     cv.restore()
-                } else if (sub != null) {
+                } else if (sub?.text != null) {
                     hint.textSize = s * 0.27f
                     hint.alpha = a
-                    cv.drawText(sub.toString(), hx, hy + s * 0.09f, hint)
+                    cv.drawText(sub.text, hx, hy + s * 0.09f, hint)
                 }
             }
             KeyKind.SPACE -> label(cv, spaceLabel(), s * 0.36f, cDim, a)
             KeyKind.SYMBOLS -> label(cv, if (symbols) "ABC" else "?123", s * 0.36f, cText, a)
-            KeyKind.SHIFT -> {
+            KeyKind.SHIFT -> if (symbols) {
+                // Ở trang ký hiệu, phím shift dùng để lật trang
+                label(cv, if (symPage == 1) "=\\<" else "?123", s * 0.36f, cText, a)
+            } else {
                 val on = shift != ShiftState.OFF
                 drawIcon(cv, shiftPath, s * 0.28f, if (on) cAccent else cText, a, filled = true)
                 if (shift == ShiftState.LOCK) {
@@ -312,9 +333,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     }
 
     private fun drawPopup(cv: Canvas, k: Key) {
-        val action = ACTION_SUBS[k.ch]
-        val sub = SUBS[k.ch]
-        if (action == null && sub == null) return
+        val sub = subOf(k) ?: return
         val w = maxOf(k.w, k.h) * 1.1f
         val h = k.h * 1.2f
         val cx = k.cx.coerceIn(w / 2, width - w / 2)
@@ -323,8 +342,8 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         fill.color = cKeyDown; fill.alpha = 255
         cv.drawRoundRect(rect, 10 * dp, 10 * dp, fill)
         cv.save(); cv.translate(cx, cy)
-        if (action != null) drawActionIcon(cv, action, h * 0.28f, cText, 255)
-        else label(cv, sub.toString(), h * 0.55f, cText, 255)
+        if (sub.action != null) drawActionIcon(cv, sub.action, h * 0.28f, cText, 255)
+        else label(cv, sub.text ?: "", h * 0.55f, cText, 255)
         cv.restore()
     }
 
@@ -350,9 +369,29 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         }
     }
 
-    private fun charLabel(ch: Char): String {
-        if (symbols) return (SYMBOLS[ch] ?: ch).toString()
-        return if (shift != ShiftState.OFF) ch.uppercaseChar().toString() else ch.toString()
+    /** Ký tự thật mà phím chữ này gõ ra (tính cả trang ký hiệu). */
+    fun outputOf(k: Key): Char =
+        if (symbols && mode != Mode.NORMAL) symbolFor(symPage, k.ch) ?: k.ch else k.ch
+
+    private fun labelOf(k: Key): String {
+        val o = outputOf(k)
+        return if (!symbols && shift != ShiftState.OFF) o.uppercaseChar().toString() else o.toString()
+    }
+
+    private class Sub(val text: String? = null, val action: KeyKind? = null)
+
+    /** Phím phụ khi giữ của một phím (ký tự hoặc chức năng), null nếu không có. */
+    private fun subOf(k: Key): Sub? {
+        if (k.kind != KeyKind.CHAR) return null
+        if (symbols && mode != Mode.NORMAL) {
+            // Vòng cung / một tay thiếu chỗ: ký hiệu dư của trang được đặt làm phím phụ
+            val pg = Layouts.SYM_PAGES[symPage - 1]
+            val t = when (k.ch) { 'l' -> pg[1][9]; ',' -> pg[3][0]; '.' -> pg[3][1]; else -> null }
+            if (t != null && t != k.ch) return Sub(text = t.toString())
+        }
+        ACTION_SUBS[k.ch]?.let { return Sub(action = it) }
+        if (!symbols) SUBS[k.ch]?.let { return Sub(text = it.toString()) }
+        return null
     }
 
     private fun spaceLabel() = when (mode) {
@@ -473,16 +512,13 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         return true
     }
 
-    private fun hasSub(k: Key) = k.kind == KeyKind.CHAR &&
-        (ACTION_SUBS.containsKey(k.ch) || (!symbols && SUBS.containsKey(k.ch)))
+    private fun hasSub(k: Key) = subOf(k) != null
 
     private fun commitChar(p: Ptr, k: Key) {
-        if (!p.sub) { listener.onKey(k); return }
-        val action = ACTION_SUBS[k.ch]
-        val sub = SUBS[k.ch]
+        val sub = if (p.sub) subOf(k) else null
         when {
-            action != null -> listener.onKey(k.copy(kind = action))
-            sub != null -> listener.onText(sub.toString())
+            sub?.action != null -> listener.onKey(k.copy(kind = sub.action))
+            sub?.text != null -> listener.onText(sub.text)
             else -> listener.onKey(k)
         }
     }

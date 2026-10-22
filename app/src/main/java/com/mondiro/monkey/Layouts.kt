@@ -22,6 +22,7 @@ data class Key(
     val angle: Float = 0f,
     val accent: Boolean = false,
     val round: Boolean = false,
+    val plain: Boolean = false,   // vẽ chỉ icon, không nền phím (vd nút thu gọn ở dải dưới)
     val alpha: Float = 1f,
 )
 
@@ -64,9 +65,16 @@ object Layouts {
 
     private fun pad(c: LayoutConfig) = 6 * c.dp
     private fun normalRow(c: LayoutConfig) = 50 * c.dp
+    private fun normalStrip(c: LayoutConfig) = 30 * c.dp
 
-    fun build(mode: Mode, w: Float, h: Float, c: LayoutConfig): List<Key> = when (mode) {
-        Mode.NORMAL -> normal(w, h, c)
+    /** Trang ký hiệu giống Laban Key: hàng 1, hàng 2 (10 phím), hàng 3 (7 phím), 2 phím cạnh phím cách. */
+    val SYM_PAGES = arrayOf(
+        arrayOf("~`|•√π÷×¶Δ", "@#$%&-+()/", "*\"':;!?", "_."),
+        arrayOf("~`|•√π÷×¶Δ", "£¢€¥^°={}…", "\\©®™%[]", "<>"),
+    )
+
+    fun build(mode: Mode, w: Float, h: Float, c: LayoutConfig, symPage: Int = 0): List<Key> = when (mode) {
+        Mode.NORMAL -> normal(w, h, c, symPage)
         Mode.ARC -> arc(w, h, c)
         Mode.ONE_LEFT -> oneHand(w, h, c, true)
         Mode.ONE_RIGHT -> oneHand(w, h, c, false)
@@ -74,7 +82,7 @@ object Layouts {
 
     /** Chiều cao cần cho bàn phím. Hai tay & một tay dùng chung chiều cao để chuyển qua lại không bị giật. */
     fun height(mode: Mode, c: LayoutConfig): Float {
-        if (mode == Mode.NORMAL) return 5 * normalRow(c) + 2 * pad(c)
+        if (mode == Mode.NORMAL) return 5 * normalRow(c) + normalStrip(c) + 2 * pad(c)
         val arcH = max(bbox(fan(ARC_LEFT, c)).height(), bbox(fan(ARC_RIGHT, c)).height()) + c.lift
         val oneH = bbox(oneRaw(c, false)).height() + c.oneLift
         return max(arcH, oneH) + 2 * pad(c)
@@ -82,20 +90,30 @@ object Layouts {
 
     // ---------------- Bàn phím thường (màn ngoài / gập nửa) ----------------
 
-    private fun normal(w: Float, h: Float, c: LayoutConfig): List<Key> {
+    private fun normal(w: Float, h: Float, c: LayoutConfig, symPage: Int): List<Key> {
         val p = 4 * c.dp
         val uw = (w - 2 * p) / 10f
         val rowH = normalRow(c)
         val gap = 5 * c.dp
-        val top = h - p - 5 * rowH
-        val rows = listOf(
+        val top = h - p - normalStrip(c) - 5 * rowH
+        val pg = if (symPage > 0) SYM_PAGES[symPage - 1] else null
+        val rows = if (pg != null) listOf(
+            chars("1234567890") to 0f,
+            chars(pg[0]) to 0f,
+            chars(pg[1]) to 0f,
+            listOf(k("shift", KeyKind.SHIFT, 1.5f)) + chars(pg[2]) + k("back", KeyKind.BACKSPACE, 1.5f) to 0f,
+            listOf(
+                k("sym_L", KeyKind.SYMBOLS, 1.5f), c(','), k("space_L", KeyKind.SPACE, 4f),
+                c(pg[3][0]), c(pg[3][1]), k("enter", KeyKind.ENTER, 1.5f),
+            ) to 0f,
+        ) else listOf(
             chars("1234567890") to 0f,
             chars("qwertyuiop") to 0f,
             chars("asdfghjkl") to 0.5f,
             listOf(k("shift", KeyKind.SHIFT, 1.5f)) + chars("zxcvbnm") + k("back", KeyKind.BACKSPACE, 1.5f) to 0f,
             listOf(
-                k("sym_L", KeyKind.SYMBOLS, 1.5f), c(','), k("space_L", KeyKind.SPACE, 4f),
-                k("hide", KeyKind.HIDE, 1f), c('.'), k("enter", KeyKind.ENTER, 1.5f),
+                k("sym_L", KeyKind.SYMBOLS, 1.5f), c(','), k("space_L", KeyKind.SPACE, 5f),
+                c('.'), k("enter", KeyKind.ENTER, 1.5f),
             ) to 0f,
         )
         val out = ArrayList<Key>()
@@ -108,6 +126,10 @@ object Layouts {
                 x += kw
             }
         }
+        // Dải mỏng phía dưới: nút thu gọn bàn phím (tách khỏi các hàng phím)
+        val st = normalStrip(c)
+        out += Key("hide", KeyKind.HIDE, cx = w - p - 28 * c.dp, cy = h - p - st / 2,
+            w = 52 * c.dp, h = st, plain = true)
         return out
     }
 

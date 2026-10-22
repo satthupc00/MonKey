@@ -17,7 +17,7 @@ class Prefs(context: Context) {
         get() = sp.getInt("lift", 0)
         set(v) = sp.edit().putInt("lift", v).apply()
     var inset: Int                // dp, nhích hai nửa vào trong
-        get() = sp.getInt("inset", 16)
+        get() = sp.getInt("inset", 28)
         set(v) = sp.edit().putInt("inset", v).apply()
     var dupMiddle: Boolean
         get() = sp.getBoolean("dup_middle", true)
