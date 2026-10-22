@@ -50,6 +50,8 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
             'a' to '@', 's' to '#', 'd' to '$', 'f' to '%', 'g' to '_', 'h' to '-', 'j' to '+', 'k' to '(', 'l' to ')',
             'z' to '*', 'x' to '"', 'c' to '\'', 'v' to ':', 'b' to ';', 'n' to '!', 'm' to '?',
         )
+        /** Phím phụ dạng chức năng khi giữ: ',' -> cài đặt, '.' -> dán. */
+        val ACTION_SUBS = mapOf(',' to KeyKind.SETTINGS, '.' to KeyKind.PASTE)
         private const val ANIM_MS = 450L
         private const val HOLD_MS = 280L
     }
@@ -58,7 +60,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
 
     var mode = Mode.NORMAL
         private set
-    var config = LayoutConfig(0.7f, 40 * dp, 0f, true, true, 0f, dp)
+    var config = LayoutConfig(0.7f, 40 * dp, 0f, 0f, true, true, 0f, dp)
         private set
     var shift = ShiftState.OFF
         set(v) { field = v; invalidate() }
@@ -77,25 +79,27 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     private val animating get() = animator?.isRunning == true
 
     // ---- paints ----
-    private val cBg = Color.parseColor("#1F2126")
-    private val cKey = Color.parseColor("#2F333A")
-    private val cKeyFn = Color.parseColor("#272A30")
-    private val cKeyDown = Color.parseColor("#454A54")
-    private val cBorder = Color.parseColor("#363A42")
+    // Tông màu giống Laban Key
+    private val cBg = Color.parseColor("#161F2E")
+    private val cKey = Color.parseColor("#4F616D")
+    private val cKeyFn = Color.parseColor("#374147")
+    private val cKeyDown = Color.parseColor("#6B7F8C")
     private val cText = Color.parseColor("#FFFFFF")
-    private val cHint = Color.parseColor("#AEB4BE")
-    private val cDim = Color.parseColor("#8C9099")
+    private val cHint = Color.parseColor("#92A3AB")
+    private val cDim = Color.parseColor("#C9D2D8")
     private val cAccent = Color.parseColor("#E5383B")
 
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER; color = cText
-        typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+        typeface = Typeface.DEFAULT_BOLD
+        style = Paint.Style.FILL_AND_STROKE // viền chữ để nét dày hơn
+        strokeJoin = Paint.Join.ROUND
     }
     private val hint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER; color = cHint
-        typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        typeface = Typeface.DEFAULT_BOLD
     }
     private val icon = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND
@@ -109,7 +113,15 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     }
     private val backPath = Path().apply {
         moveTo(-1f, 0f); lineTo(-0.45f, -0.7f); lineTo(1f, -0.7f); lineTo(1f, 0.7f); lineTo(-0.45f, 0.7f); close()
+    }
+    private val backX = Path().apply {
         moveTo(0.05f, -0.3f); lineTo(0.6f, 0.3f); moveTo(0.6f, -0.3f); lineTo(0.05f, 0.3f)
+    }
+    private val hidePath = Path().apply {
+        addRoundRect(RectF(-0.95f, -0.8f, 0.95f, 0.3f), 0.15f, 0.15f, Path.Direction.CW)
+        moveTo(-0.55f, -0.45f); lineTo(-0.5f, -0.45f); moveTo(-0.05f, -0.45f); lineTo(0.05f, -0.45f)
+        moveTo(0.5f, -0.45f); lineTo(0.55f, -0.45f); moveTo(-0.45f, -0.05f); lineTo(0.45f, -0.05f)
+        moveTo(-0.3f, 0.55f); lineTo(0f, 0.85f); lineTo(0.3f, 0.55f)
     }
     private val pastePath = Path().apply {
         // bảng kẹp giấy
@@ -241,58 +253,78 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         val fn = k.kind != KeyKind.CHAR && k.kind != KeyKind.SPACE
         fill.color = if (down) cKeyDown else if (fn) cKeyFn else cKey
         fill.alpha = a
-        stroke.color = if (k.accent) cAccent else cBorder
-        stroke.strokeWidth = if (k.accent) 1.6f * dp else 1f * dp
-        stroke.alpha = a
         rect.set(-k.w / 2, -k.h / 2, k.w / 2, k.h / 2)
-        if (k.round) {
-            cv.drawOval(rect, fill); cv.drawOval(rect, stroke)
-        } else {
-            val r = 8 * dp
-            cv.drawRoundRect(rect, r, r, fill); cv.drawRoundRect(rect, r, r, stroke)
+        val r = 7 * dp
+        if (k.round) cv.drawOval(rect, fill) else cv.drawRoundRect(rect, r, r, fill)
+        if (k.accent) {
+            stroke.color = cAccent; stroke.strokeWidth = 1.6f * dp; stroke.alpha = a
+            if (k.round) cv.drawOval(rect, stroke) else cv.drawRoundRect(rect, r, r, stroke)
         }
 
         val s = minOf(k.w, k.h)
         when (k.kind) {
             KeyKind.CHAR -> {
-                label(cv, charLabel(k.ch), s * 0.5f, cText, a)
+                label(cv, charLabel(k.ch), s * 0.6f, cText, a)
+                val hx = k.w / 2 - s * 0.2f
+                val hy = -k.h / 2 + s * 0.24f
+                val action = ACTION_SUBS[k.ch]
                 val sub = if (symbols) null else SUBS[k.ch]
-                if (sub != null) {
-                    hint.textSize = s * 0.24f
+                if (action != null) {
+                    cv.save(); cv.translate(hx, hy)
+                    drawActionIcon(cv, action, s * 0.12f, cHint, a)
+                    cv.restore()
+                } else if (sub != null) {
+                    hint.textSize = s * 0.27f
                     hint.alpha = a
-                    cv.drawText(sub.toString(), k.w / 2 - s * 0.2f, -k.h / 2 + s * 0.3f, hint)
+                    cv.drawText(sub.toString(), hx, hy + s * 0.09f, hint)
                 }
             }
-            KeyKind.SPACE -> label(cv, spaceLabel(), s * 0.30f, cDim, a)
-            KeyKind.SYMBOLS -> label(cv, if (symbols) "ABC" else "123", s * 0.32f, cText, a)
+            KeyKind.SPACE -> label(cv, spaceLabel(), s * 0.36f, cDim, a)
+            KeyKind.SYMBOLS -> label(cv, if (symbols) "ABC" else "?123", s * 0.36f, cText, a)
             KeyKind.SHIFT -> {
                 val on = shift != ShiftState.OFF
-                drawIcon(cv, shiftPath, s * 0.26f, if (on) cAccent else cText, a, filled = shift == ShiftState.LOCK)
+                drawIcon(cv, shiftPath, s * 0.28f, if (on) cAccent else cText, a, filled = true)
+                if (shift == ShiftState.LOCK) {
+                    fill.color = cAccent; fill.alpha = a
+                    cv.drawRect(-s * 0.22f, s * 0.34f, s * 0.22f, s * 0.4f, fill)
+                }
             }
-            KeyKind.BACKSPACE -> drawIcon(cv, backPath, s * 0.28f, cText, a)
-            KeyKind.ENTER -> drawIcon(cv, enterPath, s * 0.28f, cText, a)
-            KeyKind.SETTINGS -> drawGear(cv, s * 0.26f, a)
-            KeyKind.PASTE -> drawIcon(cv, pastePath, s * 0.24f, cText, a)
-            KeyKind.ROUND_SWAP -> label(cv, "Đổi bên", s * 0.2f, cText, a)
-            KeyKind.ROUND_TWO -> label(cv, "Hai tay", s * 0.2f, cText, a)
+            KeyKind.BACKSPACE -> {
+                drawIcon(cv, backPath, s * 0.3f, cText, a, filled = true)
+                drawIcon(cv, backX, s * 0.3f, if (down) cKeyDown else cKeyFn, a, width = 2.6f)
+            }
+            KeyKind.ENTER -> drawIcon(cv, enterPath, s * 0.3f, cText, a, width = 2.6f)
+            KeyKind.SETTINGS, KeyKind.PASTE, KeyKind.HIDE -> drawActionIcon(cv, k.kind, s * 0.27f, cText, a)
+            KeyKind.ROUND_SWAP -> label(cv, "Đổi bên", s * 0.22f, cText, a)
+            KeyKind.ROUND_TWO -> label(cv, "Hai tay", s * 0.22f, cText, a)
         }
         cv.restore()
     }
 
     /** Bong bóng hiện phím phụ phía trên phím đang giữ. */
+    private fun drawActionIcon(cv: Canvas, kind: KeyKind, size: Float, color: Int, a: Int) {
+        when (kind) {
+            KeyKind.SETTINGS -> drawGear(cv, size, a, color)
+            KeyKind.PASTE -> drawIcon(cv, pastePath, size * 0.9f, color, a)
+            KeyKind.HIDE -> drawIcon(cv, hidePath, size, color, a)
+            else -> {}
+        }
+    }
+
     private fun drawPopup(cv: Canvas, k: Key) {
-        val sub = SUBS[k.ch] ?: return
+        val action = ACTION_SUBS[k.ch]
+        val sub = SUBS[k.ch]
+        if (action == null && sub == null) return
         val w = maxOf(k.w, k.h) * 1.1f
         val h = k.h * 1.2f
         val cx = k.cx.coerceIn(w / 2, width - w / 2)
         val cy = (k.cy - k.h * 1.25f).coerceAtLeast(h / 2)
         rect.set(cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)
         fill.color = cKeyDown; fill.alpha = 255
-        stroke.color = cAccent; stroke.strokeWidth = 1.6f * dp; stroke.alpha = 255
         cv.drawRoundRect(rect, 10 * dp, 10 * dp, fill)
-        cv.drawRoundRect(rect, 10 * dp, 10 * dp, stroke)
         cv.save(); cv.translate(cx, cy)
-        label(cv, sub.toString(), h * 0.5f, cText, 255)
+        if (action != null) drawActionIcon(cv, action, h * 0.28f, cText, 255)
+        else label(cv, sub.toString(), h * 0.55f, cText, 255)
         cv.restore()
     }
 
@@ -333,26 +365,27 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         text.textSize = size
         text.color = color
         text.alpha = a
+        text.strokeWidth = size * 0.035f
         val fm = text.fontMetrics
         cv.drawText(s, 0f, -(fm.ascent + fm.descent) / 2, text)
     }
 
-    private fun drawIcon(cv: Canvas, p: Path, scale: Float, color: Int, a: Int, filled: Boolean = false) {
+    private fun drawIcon(cv: Canvas, p: Path, scale: Float, color: Int, a: Int, filled: Boolean = false, width: Float = 2f) {
         cv.save()
         cv.scale(scale, scale)
         icon.color = color
         icon.alpha = a
-        icon.strokeWidth = 1.8f * dp / scale
+        icon.strokeWidth = width * dp / scale
         icon.style = if (filled) Paint.Style.FILL_AND_STROKE else Paint.Style.STROKE
         cv.drawPath(p, icon)
         cv.restore()
     }
 
-    private fun drawGear(cv: Canvas, r: Float, a: Int) {
-        icon.color = cText
+    private fun drawGear(cv: Canvas, r: Float, a: Int, color: Int = cText) {
+        icon.color = color
         icon.alpha = a
         icon.style = Paint.Style.STROKE
-        icon.strokeWidth = 1.8f * dp
+        icon.strokeWidth = (r * 0.18f).coerceIn(1.2f * dp, 2.2f * dp)
         cv.drawCircle(0f, 0f, r * 0.6f, icon)
         cv.drawCircle(0f, 0f, r * 0.22f, icon)
         for (i in 0 until 8) {
@@ -412,7 +445,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                         repeatCount = 0
                         handler.removeCallbacks(repeat)
                         handler.postDelayed(repeat, 380)
-                    } else if (k.kind == KeyKind.CHAR && !symbols && SUBS.containsKey(k.ch)) {
+                    } else if (hasSub(k)) {
                         holdPtr = id
                         handler.postDelayed(hold, HOLD_MS)
                     }
@@ -440,15 +473,26 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         return true
     }
 
+    private fun hasSub(k: Key) = k.kind == KeyKind.CHAR &&
+        (ACTION_SUBS.containsKey(k.ch) || (!symbols && SUBS.containsKey(k.ch)))
+
     private fun commitChar(p: Ptr, k: Key) {
+        if (!p.sub) { listener.onKey(k); return }
+        val action = ACTION_SUBS[k.ch]
         val sub = SUBS[k.ch]
-        if (p.sub && sub != null) listener.onText(sub.toString()) else listener.onKey(k)
+        when {
+            action != null -> listener.onKey(k.copy(kind = action))
+            sub != null -> listener.onText(sub.toString())
+            else -> listener.onKey(k)
+        }
     }
 
     private fun space(k: Key, dx: Float, dy: Float) {
         val th = 36 * dp
+        // Phím cách ở bàn phím vòng cung bị nghiêng nên vuốt ngang thường lệch chéo:
+        // chỉ cần đi ngang đủ xa là tính vuốt trái/phải.
         val dir = when {
-            abs(dx) > th && abs(dx) > abs(dy) -> if (dx < 0) -1 else 1
+            abs(dx) > th * 0.8f && abs(dx) > abs(dy) * 0.5f -> if (dx < 0) -1 else 1
             dy < -th && abs(dy) > abs(dx) -> 2
             else -> 0
         }

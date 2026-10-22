@@ -38,6 +38,7 @@ class SettingsActivity : Activity() {
         slider(R.id.seekCurve, R.id.valCurve, 0, 100, prefs.curvature, "") { prefs.curvature = it }
         slider(R.id.seekSize, R.id.valSize, 30, 56, prefs.keySize, " dp") { prefs.keySize = it }
         slider(R.id.seekLift, R.id.valLift, 0, 150, prefs.lift, " dp") { prefs.lift = it }
+        slider(R.id.seekInset, R.id.valInset, 0, 120, prefs.inset, " dp") { prefs.inset = it }
         slider(R.id.seekOneLift, R.id.valOneLift, 0, 200, prefs.oneLift, " dp") { prefs.oneLift = it }
         toggle(R.id.swDup, prefs.dupMiddle) { prefs.dupMiddle = it }
         toggle(R.id.swOneCurve, prefs.oneCurved) { prefs.oneCurved = it }

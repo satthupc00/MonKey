@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg">#1F2126</color>
-    <color name="key">#2F333A</color>
-    <color name="border">#363A42</color>
+    <color name="bg">#161F2E</color>
+    <color name="key">#2B3644</color>
+    <color name="border">#374147</color>
     <color name="text">#E8E9EC</color>
-    <color name="text_dim">#9A9EA6</color>
+    <color name="text_dim">#92A3AB</color>
     <color name="accent">#E5383B</color>
     <color name="latest">#4CD964</color>
-    <color name="ic_launcher_background">#1F2126</color>
+    <color name="ic_launcher_background">#161F2E</color>
 </resources>

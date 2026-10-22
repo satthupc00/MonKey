@@ -144,6 +144,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
             }
             KeyKind.SYMBOLS -> v.symbols = !v.symbols
             KeyKind.PASTE -> paste()
+            KeyKind.HIDE -> requestHideSelf(0)
             KeyKind.SETTINGS -> startActivity(
                 Intent(this, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )

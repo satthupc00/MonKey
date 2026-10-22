@@ -1,5 +1,16 @@
 # Nhật ký thay đổi MonKey
 
+## v1.2.0
+**Tông màu Laban, chữ dày hơn, thu gọn bàn phím**
+
+- Tông màu giống Laban Key: nền xanh đen, phím xanh xám, phím chức năng tối hơn, chữ trắng.
+- Chữ trên phím to và đậm hơn (nhất là màn ngoài); icon shift / xoá đặc như Laban.
+- Màn trong: thêm phím dấu phẩy (trái) và dấu chấm (phải) ở hàng dưới.
+- Màn trong: thêm "Nhích vào trong" trong cài đặt để đẩy hai nửa bàn phím vào giữa.
+- Sửa lỗi vuốt phím cách không chuyển sang bàn phím một tay (phím cách nghiêng làm vuốt bị lệch chéo).
+- Màn ngoài: gộp cài đặt vào phím dấu phẩy (giữ để mở cài đặt), phím cách rộng hơn; giữ dấu chấm để dán.
+- Thêm phím thu gọn bàn phím (màn ngoài: cạnh phím cách; màn trong: nút tròn ở giữa; một tay: nút tròn bên cạnh).
+
 ## v1.1.0
 **Phím phụ, dán clipboard, rung, xoá nhanh**
 

@@ -16,6 +16,9 @@ class Prefs(context: Context) {
     var lift: Int                 // dp
         get() = sp.getInt("lift", 0)
         set(v) = sp.edit().putInt("lift", v).apply()
+    var inset: Int                // dp, nhích hai nửa vào trong
+        get() = sp.getInt("inset", 16)
+        set(v) = sp.edit().putInt("inset", v).apply()
     var dupMiddle: Boolean
         get() = sp.getBoolean("dup_middle", true)
         set(v) = sp.edit().putBoolean("dup_middle", v).apply()
@@ -39,6 +42,7 @@ class Prefs(context: Context) {
         curvature = curvature / 100f,
         keySize = keySize * dp,
         lift = lift * dp,
+        inset = inset * dp,
         dupMiddle = dupMiddle,
         oneCurved = oneCurved,
         oneLift = oneLift * dp,
