@@ -28,10 +28,23 @@ jobs:
       - name: Prepare signing key
         env:
           MONKEY_KEYSTORE: ${{ secrets.MONKEY_KEYSTORE }}
+          MONKEY_KEY_PASSWORD: ${{ secrets.MONKEY_KEY_PASSWORD }}
         run: |
           if [ -n "$MONKEY_KEYSTORE" ]; then
-            echo "$MONKEY_KEYSTORE" | base64 -d > "$RUNNER_TEMP/monkey.jks"
+            # Bỏ dấu cách / xuống dòng / dấu nháy lỡ dán vào secret
+            printf '%s' "$MONKEY_KEYSTORE" | tr -d ' \r\n\t"' > "$RUNNER_TEMP/ks.b64"
+            if ! base64 -d "$RUNNER_TEMP/ks.b64" > "$RUNNER_TEMP/monkey.jks" 2>/dev/null; then
+              echo "::error::Secret MONKEY_KEYSTORE không phải base64 hợp lệ ($(wc -c < "$RUNNER_TEMP/ks.b64") ký tự, bắt đầu bằng '$(head -c 4 "$RUNNER_TEMP/ks.b64")'). Hãy dán lại toàn bộ nội dung file MONKEY_KEYSTORE.txt."
+              exit 1
+            fi
+            PW=$(printf '%s' "$MONKEY_KEY_PASSWORD" | tr -d '\r\n')
+            echo "::add-mask::$PW"
+            if ! keytool -list -keystore "$RUNNER_TEMP/monkey.jks" -storepass "$PW" -alias monkey >/dev/null 2>&1; then
+              echo "::error::Keystore giải mã được nhưng mật khẩu MONKEY_KEY_PASSWORD không khớp (hoặc file keystore bị thiếu)."
+              exit 1
+            fi
             echo "MONKEY_KEYSTORE_FILE=$RUNNER_TEMP/monkey.jks" >> "$GITHUB_ENV"
+            echo "MONKEY_KEY_PASSWORD_CLEAN=$PW" >> "$GITHUB_ENV"
           else
             echo "::warning::Chưa có secret MONKEY_KEYSTORE - APK được ký bằng khoá debug tạm thời"
           fi

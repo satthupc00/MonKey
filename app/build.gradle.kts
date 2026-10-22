@@ -18,7 +18,7 @@ android {
     // Khoá ký lấy từ GitHub Secrets (MONKEY_KEYSTORE, MONKEY_KEY_PASSWORD) để mọi bản build
     // cùng chữ ký -> cài đè / tự cập nhật được. Không có secrets thì ký bằng khoá debug.
     val keystorePath = System.getenv("MONKEY_KEYSTORE_FILE")
-    val signPassword = System.getenv("MONKEY_KEY_PASSWORD")
+    val signPassword = System.getenv("MONKEY_KEY_PASSWORD_CLEAN") ?: System.getenv("MONKEY_KEY_PASSWORD")
     val hasReleaseKey = !keystorePath.isNullOrEmpty() && !signPassword.isNullOrEmpty() && file(keystorePath).exists()
 
     signingConfigs {
