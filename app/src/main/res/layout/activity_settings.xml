@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxWidth="640dp"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="56dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@mipmap/ic_launcher" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="MonKey"
+                android:textColor="@color/text"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/latest"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="latest"
+                android:textColor="@color/latest"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+            <TextView
+                android:id="@+id/version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_dim"
+                android:textSize="13sp" />
+        </LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Bàn phím VNI vòng cung cho Galaxy Z Fold 7"
+            android:textColor="@color/text_dim"
+            android:textSize="13sp" />
+
+        <TextView style="@style/Section" android:text="Cài đặt nhanh" />
+        <Button android:id="@+id/btnEnable" style="@style/Btn" android:text="1. Bật bàn phím MonKey" />
+        <Button android:id="@+id/btnPick" style="@style/Btn" android:text="2. Chọn MonKey làm bàn phím" />
+        <EditText android:id="@+id/test" style="@style/Input" android:hint="Gõ thử ở đây… (vd: Vie65t Nam)" />
+        <TextView style="@style/Section" android:text="Bàn phím vòng cung (hai tay)" />
+        <LinearLayout style="@style/Card">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView style="@style/Label" android:layout_width="0dp" android:layout_weight="1" android:text="Độ cong" />
+                <TextView android:id="@+id/valCurve" style="@style/Value" />
+            </LinearLayout>
+            <SeekBar android:id="@+id/seekCurve" style="@style/Seek" />
+            <TextView style="@style/Hint" android:text="0 = tách đôi thẳng · 100 = cong hoàn toàn" />
+        </LinearLayout>
+        <LinearLayout style="@style/Card">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView style="@style/Label" android:layout_width="0dp" android:layout_weight="1" android:text="Cỡ phím" />
+                <TextView android:id="@+id/valSize" style="@style/Value" />
+            </LinearLayout>
+            <SeekBar android:id="@+id/seekSize" style="@style/Seek" />
+        </LinearLayout>
+        <LinearLayout style="@style/Card">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView style="@style/Label" android:layout_width="0dp" android:layout_weight="1" android:text="Nâng bàn phím" />
+                <TextView android:id="@+id/valLift" style="@style/Value" />
+            </LinearLayout>
+            <SeekBar android:id="@+id/seekLift" style="@style/Seek" />
+            <TextView style="@style/Hint" android:text="Dời gốc quạt lên cao hơn" />
+        </LinearLayout>
+        <LinearLayout style="@style/Card">
+            <Switch android:id="@+id/swDup" style="@style/Sw" android:text="Nhân đôi phím giữa" />
+            <TextView style="@style/Hint" android:text="B H Y 6 bên trái · V G T 5 bên phải (viền đỏ)" />
+        </LinearLayout>
+        <TextView style="@style/Section" android:text="Một tay" />
+        <LinearLayout style="@style/Card">
+            <Switch android:id="@+id/swOneCurve" style="@style/Sw" android:text="Cong nhẹ" />
+            <TextView style="@style/Hint" android:text="Tắt để bàn phím một tay phẳng" />
+        </LinearLayout>
+        <LinearLayout style="@style/Card">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView style="@style/Label" android:layout_width="0dp" android:layout_weight="1" android:text="Nâng bàn phím một tay" />
+                <TextView android:id="@+id/valOneLift" style="@style/Value" />
+            </LinearLayout>
+            <SeekBar android:id="@+id/seekOneLift" style="@style/Seek" />
+            <TextView style="@style/Hint" android:text="Hữu ích khi đỡ máy bằng một tay" />
+        </LinearLayout>
+        <TextView style="@style/Section" android:text="Khác" />
+        <LinearLayout style="@style/Card">
+            <Switch android:id="@+id/swVibrate" style="@style/Sw" android:text="Rung khi gõ" />
+        </LinearLayout>
+        <LinearLayout style="@style/Card">
+            <Switch android:id="@+id/swPosture" style="@style/Sw" android:text="Gập nửa máy → bàn phím thường" />
+            <TextView style="@style/Hint" android:text="Gập (màn ngoài) luôn dùng bàn phím thường; mở phẳng dùng vòng cung" />
+        </LinearLayout>
+        <TextView style="@style/Section" android:text="Cách dùng" />
+        <TextView style="@style/Help" android:text="• Vuốt trái / phải trên phím cách: thu về bàn phím một tay bên đó.\n• Ở chế độ một tay: vuốt sang bên kia để đổi bên, vuốt lên để về hai tay.\n• Nút tròn cạnh bàn phím một tay: Đổi bên / Hai tay / Cài đặt.\n• VNI: 1 sắc · 2 huyền · 3 hỏi · 4 ngã · 5 nặng · 6 mũ · 7 móc · 8 trăng · 9 đ · 0 xoá dấu.\n• Dấu đặt lên nguyên âm gần con trỏ nhất. Muốn “hòa”: gõ ho2a.\n• Gõ số thường: bấm số 2 lần (vd a11 → a1) hoặc dùng phím 123." />
+
+        <Button android:id="@+id/btnUpdate" style="@style/Btn" android:layout_marginTop="24dp" android:text="Kiểm tra bản cập nhật" />
+    </LinearLayout>
+    </ScrollView>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="12dp"
+        android:text="Created by Mondiro"
+        android:textColor="@color/text_dim"
+        android:textSize="11sp" />
+</FrameLayout>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MonKey</string>
+    <string name="ime_name">MonKey VNI</string>
+    <string name="subtype_vi">Tiếng Việt (VNI)</string>
+</resources>

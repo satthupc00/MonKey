@@ -1,0 +1,71 @@
+name: Build & Release APK
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare signing key
+        env:
+          MONKEY_KEYSTORE: ${{ secrets.MONKEY_KEYSTORE }}
+        run: |
+          if [ -n "$MONKEY_KEYSTORE" ]; then
+            echo "$MONKEY_KEYSTORE" | base64 -d > "$RUNNER_TEMP/monkey.jks"
+            echo "MONKEY_KEYSTORE_FILE=$RUNNER_TEMP/monkey.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Chưa có secret MONKEY_KEYSTORE - APK được ký bằng khoá debug tạm thời"
+          fi
+
+      - name: Test & build
+        env:
+          MONKEY_KEY_PASSWORD: ${{ secrets.MONKEY_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest assembleRelease --stacktrace
+
+      - name: Read version
+        id: ver
+        run: echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk "MonKey-v${{ steps.ver.outputs.name }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MonKey-v${{ steps.ver.outputs.name }}
+          path: MonKey-v*.apk
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="${{ steps.ver.outputs.name }}"
+          TAG="v$VER"
+          awk -v h="## v$VER" '$0==h{f=1;next} /^## /{if(f)exit} f' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "MonKey $TAG" > notes.md
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" MonKey-v*.apk --clobber
+            gh release edit "$TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" MonKey-v*.apk --title "MonKey $TAG" --notes-file notes.md --target "$GITHUB_SHA"
+          fi
