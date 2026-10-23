@@ -68,7 +68,6 @@ object Layouts {
 
     private fun pad(c: LayoutConfig) = 6 * c.dp
     private fun normalRow(c: LayoutConfig) = 50 * c.dp
-    private fun normalStrip(c: LayoutConfig) = 30 * c.dp
 
     /** Trang ký hiệu giống Laban Key: hàng 1, hàng 2 (10 phím), hàng 3 (7 phím), 2 phím cạnh phím cách. */
     val SYM_PAGES = arrayOf(
@@ -85,7 +84,7 @@ object Layouts {
 
     /** Chiều cao cần cho bàn phím. Hai tay & một tay dùng chung chiều cao để chuyển qua lại không bị giật. */
     fun height(mode: Mode, c: LayoutConfig): Float {
-        if (mode == Mode.NORMAL) return 5 * normalRow(c) + normalStrip(c) + 2 * pad(c)
+        if (mode == Mode.NORMAL) return 5 * normalRow(c) + 2 * pad(c)
         val arcH = max(bbox(fan(ARC_LEFT, c)).height(), bbox(fan(ARC_RIGHT, c)).height()) + c.lift
         val oneH = bbox(oneRaw(c, false)).height() + c.oneLift
         return max(arcH, oneH) + 2 * pad(c)
@@ -98,7 +97,7 @@ object Layouts {
         val uw = (w - 2 * p) / 10f
         val rowH = normalRow(c)
         val gap = 5 * c.dp
-        val top = h - p - normalStrip(c) - 5 * rowH
+        val top = h - p - 5 * rowH
         val pg = if (symPage > 0) SYM_PAGES[symPage - 1] else null
         val rows = if (pg != null) listOf(
             chars("1234567890") to 0f,
@@ -129,10 +128,6 @@ object Layouts {
                 x += kw
             }
         }
-        // Dải mỏng phía dưới: nút thu gọn bàn phím (tách khỏi các hàng phím)
-        val st = normalStrip(c)
-        out += Key("hide", KeyKind.HIDE, cx = w - p - 28 * c.dp, cy = h - p - st / 2,
-            w = 52 * c.dp, h = st, plain = true)
         return out
     }
 

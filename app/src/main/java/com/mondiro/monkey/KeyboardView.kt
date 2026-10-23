@@ -60,6 +60,8 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     }
 
     private val dp = resources.displayMetrics.density
+    /** Font Roboto Regular đóng gói trong app (giống Laban Key), không phụ thuộc font hệ thống Samsung. */
+    private val roboto: Typeface = try { resources.getFont(R.font.roboto_regular) } catch (_: Exception) { Typeface.DEFAULT }
 
     var mode = Mode.NORMAL
         private set
@@ -103,13 +105,12 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER; color = cText
-        typeface = Typeface.DEFAULT_BOLD
-        style = Paint.Style.FILL_AND_STROKE // viền chữ để nét dày hơn
+        typeface = roboto
         strokeJoin = Paint.Join.ROUND
     }
     private val hint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER; color = cHint
-        typeface = Typeface.DEFAULT_BOLD
+        typeface = roboto
     }
     private val icon = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND
@@ -283,7 +284,8 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         val s = minOf(k.w, k.h)
         when (k.kind) {
             KeyKind.CHAR -> {
-                label(cv, labelOf(k), s * 0.6f, cText, a)
+                // Cỡ chữ theo tỉ lệ Laban: ~70% chiều cao phím, không vượt bề rộng phím
+                label(cv, labelOf(k), minOf(k.h * 0.68f, k.w * 0.95f), cText, a)
                 val hx = k.w / 2 - s * 0.2f
                 val hy = -k.h / 2 + s * 0.24f
                 val sub = subOf(k)
@@ -404,7 +406,6 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         text.textSize = size
         text.color = color
         text.alpha = a
-        text.strokeWidth = size * 0.035f
         val fm = text.fontMetrics
         cv.drawText(s, 0f, -(fm.ascent + fm.descent) / 2, text)
     }

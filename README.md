@@ -29,4 +29,6 @@ Mọi bản APK phải ký cùng một khoá thì mới cài đè lên nhau. Kho
 
 Chưa có secrets thì APK vẫn build được nhưng ký bằng khoá debug tạm (mỗi lần build khác nhau → phải gỡ app cũ trước khi cài).
 
+Font chữ phím: Roboto (Google, Apache License 2.0) – `app/src/main/res/font/roboto_regular.ttf`.
+
 Created by Mondiro

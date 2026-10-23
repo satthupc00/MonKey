@@ -1,5 +1,9 @@
 # Nhật ký thay đổi MonKey
 
+## v1.7.0
+- Chữ trên phím dùng font Roboto Regular (giống Laban Key) đóng gói sẵn trong app: nét thanh, cao, không còn bị đậm và lùn theo font Samsung.
+- Màn ngoài: bỏ dải nút thu gọn riêng (đã có nút ⌄ của hệ thống), bàn phím thấp lại.
+
 ## v1.6.0
 - Bỏ nút thu gọn tròn ở bàn phím một tay (còn Đổi bên / Hai tay / Dán / Cài đặt).
 - Thêm "Nhích bàn phím một tay vào trong" (0–200dp) trong Cài đặt → Một tay.
