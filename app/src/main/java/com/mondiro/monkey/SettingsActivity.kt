@@ -41,6 +41,7 @@ class SettingsActivity : Activity() {
         slider(R.id.seekWidth, R.id.valWidth, 60, 100, prefs.keyWidth, "%") { prefs.keyWidth = it }
         slider(R.id.seekInset, R.id.valInset, 0, 120, prefs.inset, " dp") { prefs.inset = it }
         slider(R.id.seekOneWidth, R.id.valOneWidth, 60, 100, prefs.oneKeyWidth, "%") { prefs.oneKeyWidth = it }
+        slider(R.id.seekOneInset, R.id.valOneInset, 0, 200, prefs.oneInset, " dp") { prefs.oneInset = it }
         slider(R.id.seekOneLift, R.id.valOneLift, 0, 200, prefs.oneLift, " dp") { prefs.oneLift = it }
         toggle(R.id.swDup, prefs.dupMiddle) { prefs.dupMiddle = it }
         toggle(R.id.swSmartTone, prefs.smartTone) { prefs.smartTone = it }

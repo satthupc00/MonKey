@@ -63,7 +63,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
 
     var mode = Mode.NORMAL
         private set
-    var config = LayoutConfig(0.05f, 40 * dp, 0f, 0f, 0.85f, 1f, true, true, 0f, dp)
+    var config = LayoutConfig(0.05f, 40 * dp, 0f, 0f, 0.85f, 1f, true, true, 0f, 0f, dp)
         private set
     var shift = ShiftState.OFF
         set(v) { field = v; invalidate() }

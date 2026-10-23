@@ -1,5 +1,9 @@
 # Nhật ký thay đổi MonKey
 
+## v1.6.0
+- Bỏ nút thu gọn tròn ở bàn phím một tay (còn Đổi bên / Hai tay / Dán / Cài đặt).
+- Thêm "Nhích bàn phím một tay vào trong" (0–200dp) trong Cài đặt → Một tay.
+
 ## v1.5.0
 - Bỏ nút thu gọn tròn ở giữa bàn phím vòng cung (dùng nút ⌄ trên thanh điều hướng).
 - Thêm "Bề rộng phím một tay" (60–100%) trong Cài đặt → Một tay, chỉnh riêng với bàn phím tách đôi.

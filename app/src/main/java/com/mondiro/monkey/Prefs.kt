@@ -50,6 +50,9 @@ class Prefs(context: Context) {
     var oneLift: Int              // dp
         get() = sp.getInt("one_lift", 0)
         set(v) = sp.edit().putInt("one_lift", v).apply()
+    var oneInset: Int             // dp, nhích bàn phím một tay vào trong
+        get() = sp.getInt("one_inset", 0)
+        set(v) = sp.edit().putInt("one_inset", v).apply()
     var oneLeft: Boolean          // nhớ bên của lần dùng một tay trước
         get() = sp.getBoolean("one_left", false)
         set(v) = sp.edit().putBoolean("one_left", v).apply()
@@ -77,6 +80,7 @@ class Prefs(context: Context) {
         dupMiddle = dupMiddle,
         oneCurved = oneCurved,
         oneLift = oneLift * dp,
+        oneInset = oneInset * dp,
         dp = dp,
     )
 }

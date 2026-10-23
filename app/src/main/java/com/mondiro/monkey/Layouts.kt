@@ -37,6 +37,7 @@ data class LayoutConfig(
     val dupMiddle: Boolean,
     val oneCurved: Boolean,
     val oneLift: Float,     // px, nâng bàn phím một tay
+    val oneInset: Float,    // px, nhích bàn phím một tay vào trong
     val dp: Float,
 )
 
@@ -237,7 +238,7 @@ object Layouts {
     private fun oneHand(w: Float, h: Float, c: LayoutConfig, left: Boolean): List<Key> {
         var keys = oneRaw(c, left)
         val b = bbox(keys)
-        val dx = if (left) pad(c) - b.left else (w - pad(c)) - b.right
+        val dx = if (left) pad(c) + c.oneInset - b.left else (w - pad(c) - c.oneInset) - b.right
         keys = shift(keys, dx, (h - pad(c) - c.oneLift) - b.bottom)
         val bb = bbox(keys)
 
@@ -246,15 +247,14 @@ object Layouts {
         val gapX = 28 * c.dp
         val bx = if (left) bb.right + gapX + rad else bb.left - gapX - rad
         val d = rad * 2
-        // 5 nút xếp dọc, co khoảng cách cho vừa chiều cao bàn phím
-        val step = minOf(rad * 2.2f, (h - 2 * pad(c) - d) / 4f)
-        val my = bb.centerY().coerceIn(pad(c) + rad + step * 2, h - pad(c) - rad - step * 2)
+        // 4 nút xếp dọc, co khoảng cách cho vừa chiều cao bàn phím
+        val step = minOf(rad * 2.3f, (h - 2 * pad(c) - d) / 3f)
+        val my = bb.centerY().coerceIn(pad(c) + rad + step * 1.5f, h - pad(c) - rad - step * 1.5f)
         keys = keys + listOf(
-            Key("swap", KeyKind.ROUND_SWAP, cx = bx, cy = my - step * 2, w = d, h = d, round = true),
-            Key("two", KeyKind.ROUND_TWO, cx = bx, cy = my - step, w = d, h = d, round = true),
-            Key("hide", KeyKind.HIDE, cx = bx, cy = my, w = d, h = d, round = true),
-            Key("paste", KeyKind.PASTE, cx = bx, cy = my + step, w = d, h = d, round = true),
-            Key("gear", KeyKind.SETTINGS, cx = bx, cy = my + step * 2, w = d, h = d, round = true),
+            Key("swap", KeyKind.ROUND_SWAP, cx = bx, cy = my - step * 1.5f, w = d, h = d, round = true),
+            Key("two", KeyKind.ROUND_TWO, cx = bx, cy = my - step * 0.5f, w = d, h = d, round = true),
+            Key("paste", KeyKind.PASTE, cx = bx, cy = my + step * 0.5f, w = d, h = d, round = true),
+            Key("gear", KeyKind.SETTINGS, cx = bx, cy = my + step * 1.5f, w = d, h = d, round = true),
         )
         return keys
     }
