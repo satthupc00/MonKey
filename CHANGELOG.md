@@ -1,5 +1,8 @@
 # Nhật ký thay đổi MonKey
 
+## v1.4.1
+- Sửa thanh điều hướng dưới bàn phím bị trắng ở màn trong: giờ cùng màu nền bàn phím, nút thu gọn ⌄ hiện rõ.
+
 ## v1.4.0
 **Tự bỏ dấu đúng chỗ, thu hẹp bàn phím tách đôi**
 

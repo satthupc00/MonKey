@@ -11,8 +11,8 @@ android {
         applicationId = "com.mondiro.monkey"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.4.0"
+        versionCode = 6
+        versionName = "1.4.1"
     }
 
     // Khoá ký lấy từ GitHub Secrets (MONKEY_KEYSTORE, MONKEY_KEY_PASSWORD) để mọi bản build

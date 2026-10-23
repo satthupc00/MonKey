@@ -5,10 +5,14 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.inputmethodservice.InputMethodService
+import android.graphics.Color
+import android.os.Build
 import android.os.SystemClock
 import android.text.InputType
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowInsetsController
+import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
@@ -59,6 +63,21 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
 
     override fun onEvaluateFullscreenMode() = false
 
+    /** Tô thanh điều hướng dưới bàn phím cùng màu nền (mặc định hệ thống để trắng) + icon sáng. */
+    @Suppress("DEPRECATION")
+    private fun tintNavigationBar() {
+        val w = window?.window ?: return
+        w.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        w.navigationBarColor = Color.parseColor("#161F2E")
+        if (Build.VERSION.SDK_INT >= 29) w.isNavigationBarContrastEnforced = false
+        if (Build.VERSION.SDK_INT >= 30) {
+            w.insetsController?.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS)
+        } else {
+            w.decorView.systemUiVisibility =
+                w.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+        }
+    }
+
     override fun onCreateInputView(): View {
         val v = KeyboardView(this, this)
         kv = v
@@ -69,6 +88,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        tintNavigationBar()
         kv?.symPage = 0
         kv?.shift = ShiftState.OFF
         updatePosture(animate = false)
