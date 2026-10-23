@@ -125,6 +125,14 @@
         </LinearLayout>
         <TextView style="@style/Section" android:text="Một tay" />
         <LinearLayout style="@style/Card">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView style="@style/Label" android:layout_width="0dp" android:layout_weight="1" android:text="Bề rộng phím một tay" />
+                <TextView android:id="@+id/valOneWidth" style="@style/Value" />
+            </LinearLayout>
+            <SeekBar android:id="@+id/seekOneWidth" style="@style/Seek" />
+            <TextView style="@style/Hint" android:text="Thu hẹp bàn phím một tay để ngón cái với tới phím xa" />
+        </LinearLayout>
+        <LinearLayout style="@style/Card">
             <Switch android:id="@+id/swOneCurve" style="@style/Sw" android:text="Cong nhẹ" />
             <TextView style="@style/Hint" android:text="Tắt để bàn phím một tay phẳng" />
         </LinearLayout>

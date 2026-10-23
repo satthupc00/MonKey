@@ -33,6 +33,7 @@ data class LayoutConfig(
     val lift: Float,        // px, nâng bàn phím hai tay
     val inset: Float,       // px, nhích hai nửa bàn phím vào trong
     val keyWidth: Float,    // tỉ lệ bề rộng phím khi tách đôi (0.6..1)
+    val oneKeyWidth: Float, // tỉ lệ bề rộng phím ở bàn phím một tay (0.6..1)
     val dupMiddle: Boolean,
     val oneCurved: Boolean,
     val oneLift: Float,     // px, nâng bàn phím một tay
@@ -186,10 +187,9 @@ object Layouts {
 
         val g = c.keySize * 1.1f
         val cy = bottom - g / 2
-        val gear = Key("gear", KeyKind.SETTINGS, cx = w / 2 - g * 1.25f, cy = cy, w = g, h = g, round = true)
-        val hide = Key("hide", KeyKind.HIDE, cx = w / 2, cy = cy, w = g, h = g, round = true)
-        val paste = Key("paste", KeyKind.PASTE, cx = w / 2 + g * 1.25f, cy = cy, w = g, h = g, round = true)
-        return left + right + gear + hide + paste
+        val gear = Key("gear", KeyKind.SETTINGS, cx = w / 2 - g * 0.7f, cy = cy, w = g, h = g, round = true)
+        val paste = Key("paste", KeyKind.PASTE, cx = w / 2 + g * 0.7f, cy = cy, w = g, h = g, round = true)
+        return left + right + gear + paste
     }
 
     // ---------------- Bàn phím một tay ----------------
@@ -205,15 +205,16 @@ object Layouts {
     /** QWERTY 1 khối, cong nhẹ (cung đồng tâm bán kính lớn) quanh góc dưới phía bên đang dính. */
     private fun oneRaw(c: LayoutConfig, left: Boolean): List<Key> {
         val u = c.keySize * 0.92f
+        val uw = u * c.oneKeyWidth   // bề rộng 1 phím (thu hẹp riêng cho một tay)
         val gap = u * 0.12f
         val pitch = u * 1.12f
-        val totalW = 10 * u
+        val totalW = 10 * uw
         val r0 = 16 * u / (if (c.oneCurved) 0.4f else 0.001f)
         val out = ArrayList<Key>()
         ONE_ROWS.forEachIndexed { i, (row, stagger) ->
-            var s = stagger * u
+            var s = stagger * uw
             for (sp in row) {
-                val kw = sp.units * u
+                val kw = sp.units * uw
                 val fx = s + kw / 2
                 val d = if (left) fx else totalW - fx
                 val r = r0 + i * pitch
@@ -224,7 +225,7 @@ object Layouts {
                     id, sp.kind, sp.ch,
                     cx = if (left) r * sin(phi) else totalW - r * sin(phi),
                     cy = r0 - r * cos(phi),
-                    w = kw - gap, h = u,
+                    w = kw - gap * c.oneKeyWidth, h = u,
                     angle = if (left) deg else -deg,
                 )
                 s += kw

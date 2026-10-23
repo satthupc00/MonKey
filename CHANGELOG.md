@@ -1,5 +1,9 @@
 # Nhật ký thay đổi MonKey
 
+## v1.5.0
+- Bỏ nút thu gọn tròn ở giữa bàn phím vòng cung (dùng nút ⌄ trên thanh điều hướng).
+- Thêm "Bề rộng phím một tay" (60–100%) trong Cài đặt → Một tay, chỉnh riêng với bàn phím tách đôi.
+
 ## v1.4.1
 - Sửa thanh điều hướng dưới bàn phím bị trắng ở màn trong: giờ cùng màu nền bàn phím, nút thu gọn ⌄ hiện rõ.
 

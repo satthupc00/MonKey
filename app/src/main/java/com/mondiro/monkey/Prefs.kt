@@ -32,6 +32,9 @@ class Prefs(context: Context) {
     var keyWidth: Int             // %, bề rộng phím khi tách đôi (thu hẹp mỗi nửa)
         get() = sp.getInt("key_width", 85)
         set(v) = sp.edit().putInt("key_width", v).apply()
+    var oneKeyWidth: Int          // %, bề rộng phím ở bàn phím một tay
+        get() = sp.getInt("one_key_width", 100)
+        set(v) = sp.edit().putInt("one_key_width", v).apply()
     var smartTone: Boolean        // tự bỏ dấu đúng chỗ
         get() = sp.getBoolean("smart_tone", true)
         set(v) = sp.edit().putBoolean("smart_tone", v).apply()
@@ -70,6 +73,7 @@ class Prefs(context: Context) {
         lift = lift * dp,
         inset = inset * dp,
         keyWidth = keyWidth / 100f,
+        oneKeyWidth = oneKeyWidth / 100f,
         dupMiddle = dupMiddle,
         oneCurved = oneCurved,
         oneLift = oneLift * dp,
