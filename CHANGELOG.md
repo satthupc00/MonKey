@@ -1,5 +1,12 @@
 # Nhật ký thay đổi MonKey
 
+## v1.7.1
+**Quan trọng – bản Android này là app MỚI**
+- App đã được đăng ký chính chủ với Google (Android Developer Console) để không còn bị Play Protect chặn khi cập nhật.
+- Vì vậy app đổi sang mã app mới `com.mondiro.vnikey`, **không cài đè lên bản cũ được** (khoá ký giữ nguyên).
+- Cách lên đời: cài `MonKey-v1.7.1.apk` → vào Cài đặt → Bàn phím, bật MonKey mới và chọn làm bàn phím mặc định → kiểm tra → gỡ bản cũ.
+- Từ bản này trở đi, cập nhật sẽ cài đè bình thường.
+
 ## v1.7.0
 - Chữ trên phím dùng font Roboto Regular (giống Laban Key) đóng gói sẵn trong app: nét thanh, cao, không còn bị đậm và lùn theo font Samsung.
 - Màn ngoài: bỏ dải nút thu gọn riêng (đã có nút ⌄ của hệ thống), bàn phím thấp lại.
