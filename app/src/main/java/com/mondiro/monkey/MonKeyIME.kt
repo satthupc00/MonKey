@@ -198,6 +198,11 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
 
     override fun onText(s: String) = commit(s)
 
+    override fun onCursor(steps: Int) {
+        val code = if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
+        repeat(kotlin.math.abs(steps)) { sendDownUpKeyEvents(code) }
+    }
+
     /** Xoá cả từ (và khoảng trắng) ngay trước con trỏ. */
     override fun onDeleteWord() {
         val ic = currentInputConnection ?: return

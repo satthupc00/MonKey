@@ -1,5 +1,8 @@
 # Nhật ký thay đổi MonKey
 
+## v1.8.0
+- Giữ phím cách khoảng 0,3 giây rồi kéo trái/phải để dời con trỏ (mỗi ~10dp = 1 ký tự). Vuốt nhanh không giữ vẫn dùng để chuyển bàn phím một tay như cũ.
+
 ## v1.7.1
 **Quan trọng – bản Android này là app MỚI**
 - App đã được đăng ký chính chủ với Google (Android Developer Console) để không còn bị Play Protect chặn khi cập nhật.

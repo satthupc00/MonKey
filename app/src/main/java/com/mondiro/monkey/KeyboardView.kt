@@ -37,6 +37,8 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         fun onText(s: String)
         /** Giữ phím xoá lâu: xoá cả từ. */
         fun onDeleteWord()
+        /** Giữ phím cách rồi kéo: dời con trỏ steps ký tự (âm = sang trái). */
+        fun onCursor(steps: Int)
     }
 
     companion object {
@@ -150,7 +152,12 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     }
 
     // ---- touch ----
-    private class Ptr(val key: Key?, val downX: Float, val downY: Float, var done: Boolean = false, var sub: Boolean = false)
+    private class Ptr(val key: Key?, val downX: Float, val downY: Float, var done: Boolean = false, var sub: Boolean = false) {
+        var curX = downX
+        var curY = downY
+        var cursor = false   // đang ở chế độ kéo phím cách để dời con trỏ
+        var anchorX = 0f
+    }
     private val ptrs = HashMap<Int, Ptr>()
     private val handler = Handler(Looper.getMainLooper())
     private var repeatPtr = -1
@@ -171,6 +178,16 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         }
     }
     private var holdPtr = -1
+    private var spacePtr = -1
+    /** Giữ phím cách ~0,3s mà chưa vuốt: chuyển sang chế độ dời con trỏ. */
+    private val spaceHold = Runnable {
+        val p = ptrs[spacePtr] ?: return@Runnable
+        if (p.done || hypot(p.curX - p.downX, p.curY - p.downY) > 18 * dp) return@Runnable
+        p.cursor = true
+        p.anchorX = p.curX
+        buzz()
+        invalidate()
+    }
     private val hold = Runnable {
         val p = ptrs[holdPtr] ?: return@Runnable
         if (!p.done) { p.sub = true; buzz(); invalidate() }
@@ -299,7 +316,10 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                     cv.drawText(sub.text, hx, hy + s * 0.09f, hint)
                 }
             }
-            KeyKind.SPACE -> label(cv, spaceLabel(), s * 0.36f, cDim, a)
+            KeyKind.SPACE -> {
+                val moving = ptrs.values.any { it.cursor && it.key?.id == k.id }
+                label(cv, if (moving) "◀  con trỏ  ▶" else spaceLabel(), s * 0.36f, if (moving) cText else cDim, a)
+            }
             KeyKind.SYMBOLS -> label(cv, if (symbols) "ABC" else "?123", s * 0.36f, cText, a)
             KeyKind.SHIFT -> if (symbols) {
                 // Ở trang ký hiệu, phím shift dùng để lật trang
@@ -472,6 +492,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                     if (!p.done && held != null && held.kind == KeyKind.CHAR) { commitChar(p, held); p.done = true }
                 }
                 handler.removeCallbacks(hold)
+                handler.removeCallbacks(spaceHold)
                 val i = e.actionIndex
                 val id = e.getPointerId(i)
                 val k = hit(e.getX(i), e.getY(i))
@@ -485,6 +506,9 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                         repeatCount = 0
                         handler.removeCallbacks(repeat)
                         handler.postDelayed(repeat, 380)
+                    } else if (k.kind == KeyKind.SPACE) {
+                        spacePtr = id
+                        handler.postDelayed(spaceHold, 300)
                     } else if (hasSub(k)) {
                         holdPtr = id
                         handler.postDelayed(hold, HOLD_MS)
@@ -498,8 +522,9 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                 val p = ptrs.remove(id)
                 if (id == repeatPtr) { handler.removeCallbacks(repeat); repeatPtr = -1 }
                 if (id == holdPtr) { handler.removeCallbacks(hold); holdPtr = -1 }
+                if (id == spacePtr) { handler.removeCallbacks(spaceHold); spacePtr = -1 }
                 val k = p?.key
-                if (p != null && k != null && !p.done) {
+                if (p != null && k != null && !p.done && !p.cursor) {
                     when (k.kind) {
                         KeyKind.SPACE -> space(k, e.getX(i) - p.downX, e.getY(i) - p.downY)
                         KeyKind.CHAR -> commitChar(p, k)
@@ -507,6 +532,21 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                     }
                 }
                 invalidate()
+            }
+            MotionEvent.ACTION_MOVE -> {
+                for (i in 0 until e.pointerCount) {
+                    val p = ptrs[e.getPointerId(i)] ?: continue
+                    p.curX = e.getX(i)
+                    p.curY = e.getY(i)
+                    if (!p.cursor) continue
+                    // Mỗi 10dp kéo ngang = dời con trỏ 1 ký tự
+                    val step = 10 * dp
+                    val n = ((p.curX - p.anchorX) / step).toInt()
+                    if (n != 0) {
+                        listener.onCursor(n)
+                        p.anchorX += n * step
+                    }
+                }
             }
             MotionEvent.ACTION_CANCEL -> { cancelTouches(); invalidate() }
         }
@@ -540,8 +580,10 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         ptrs.clear()
         handler.removeCallbacks(repeat)
         handler.removeCallbacks(hold)
+        handler.removeCallbacks(spaceHold)
         repeatPtr = -1
         holdPtr = -1
+        spacePtr = -1
     }
 
     override fun onDetachedFromWindow() {
