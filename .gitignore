@@ -1,5 +1,11 @@
 .gradle/
 build/
+# Thư mục build/ ở gốc repo chứa logo cho M AppHub (không phải output Gradle)
+!/build/
+/build/*
+!/build/icon.png
+!/build/icon-1024.png
+!/build/icon.svg
 local.properties
 .idea/
 *.iml
