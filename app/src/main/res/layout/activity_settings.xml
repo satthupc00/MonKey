@@ -79,6 +79,12 @@
             <TextView style="@style/Hint" android:text="Bật: hòa, thúy, khỏe · Tắt: hoà, thuý, khoẻ" />
         </LinearLayout>
 
+        <LinearLayout style="@style/Card">
+            <Switch android:id="@+id/swSuggest" style="@style/Sw" android:text="Hàng gợi ý chữ" />
+            <TextView style="@style/Hint" android:text="Gợi ý các chữ bạn hay gõ, bấm vào là điền luôn. Chỉ lưu trong máy, không học ở ô mật khẩu." />
+        </LinearLayout>
+        <Button android:id="@+id/btnClearWords" style="@style/Btn" android:text="Xoá dữ liệu gợi ý" />
+
         <TextView style="@style/Section" android:text="Bàn phím vòng cung (hai tay)" />
         <LinearLayout style="@style/Card">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">

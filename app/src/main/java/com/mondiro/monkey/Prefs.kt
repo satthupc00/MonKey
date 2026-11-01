@@ -35,6 +35,9 @@ class Prefs(context: Context) {
     var oneKeyWidth: Int          // %, bề rộng phím ở bàn phím một tay
         get() = sp.getInt("one_key_width", 100)
         set(v) = sp.edit().putInt("one_key_width", v).apply()
+    var suggestions: Boolean      // hàng gợi ý chữ
+        get() = sp.getBoolean("suggestions", true)
+        set(v) = sp.edit().putBoolean("suggestions", v).apply()
     var smartTone: Boolean        // tự bỏ dấu đúng chỗ
         get() = sp.getBoolean("smart_tone", true)
         set(v) = sp.edit().putBoolean("smart_tone", v).apply()

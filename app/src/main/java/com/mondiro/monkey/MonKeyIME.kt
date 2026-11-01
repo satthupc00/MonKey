@@ -11,6 +11,7 @@ import android.os.SystemClock
 import android.text.InputType
 import android.view.KeyEvent
 import android.view.View
+import android.widget.LinearLayout
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
@@ -26,6 +27,8 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
 
     private lateinit var prefs: Prefs
     private var kv: KeyboardView? = null
+    private var bar: SuggestionBar? = null
+    private val store by lazy { WordStore.get(this) }
     private val scope: CoroutineScope = MainScope()
 
     private var mode = Mode.NORMAL
@@ -81,9 +84,77 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
     override fun onCreateInputView(): View {
         val v = KeyboardView(this, this)
         kv = v
+        val b = SuggestionBar(this) { pickSuggestion(it) }
+        bar = b
         mode = targetMode(Mode.NORMAL)
         apply(animate = false)
-        return v
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(b, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+            addView(v, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        }
+    }
+
+    // ================= Gợi ý chữ =================
+
+    /** Không gợi ý / không học ở ô mật khẩu, ô số, chế độ ẩn danh hoặc khi tắt trong cài đặt. */
+    private fun suggestionsAllowed(): Boolean {
+        if (!prefs.suggestions) return false
+        val ei = currentInputEditorInfo ?: return false
+        val t = ei.inputType
+        if ((t and InputType.TYPE_MASK_CLASS) != InputType.TYPE_CLASS_TEXT) return false
+        val variation = t and InputType.TYPE_MASK_VARIATION
+        if (variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+            variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+            variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD
+        ) return false
+        if ((ei.imeOptions and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0) return false
+        return true
+    }
+
+    /** Chữ đang gõ dở trước con trỏ và chữ đứng trước nó. */
+    private fun currentAndPrevWord(): Pair<String, String?> {
+        val before = currentInputConnection?.getTextBeforeCursor(64, 0)?.toString() ?: return "" to null
+        val cur = wordBeforeCursor(before)
+        val rest = before.substring(0, before.length - cur.length)
+        val trimmed = rest.trimEnd(' ')
+        // Chỉ lấy chữ trước nếu cách nhau bằng dấu cách (không qua dấu câu)
+        val prev = if (trimmed.length < rest.length) wordBeforeCursor(trimmed).ifEmpty { null } else null
+        return cur to prev
+    }
+
+    private fun refreshSuggestions() {
+        val b = bar ?: return
+        b.visibility = if (prefs.suggestions) View.VISIBLE else View.GONE
+        if (!suggestionsAllowed() || kv?.symbols == true) { b.words = emptyList(); return }
+        val (cur, prev) = currentAndPrevWord()
+        b.words = store.suggest(cur, prev, 5)
+    }
+
+    /** Học chữ vừa gõ xong (gọi trước khi gõ dấu cách / enter / dấu câu). */
+    private fun learnCurrentWord() {
+        if (!suggestionsAllowed()) return
+        val (cur, prev) = currentAndPrevWord()
+        if (cur.isNotEmpty()) store.learn(cur, prev)
+    }
+
+    private fun pickSuggestion(word: String) {
+        val ic = currentInputConnection ?: return
+        val (cur, prev) = currentAndPrevWord()
+        ic.beginBatchEdit()
+        if (cur.isNotEmpty()) ic.deleteSurroundingText(cur.length, 0)
+        ic.commitText("$word ", 1)
+        ic.endBatchEdit()
+        store.learn(word, prev)
+        kv?.let { if (it.shift == ShiftState.ONCE) it.shift = ShiftState.OFF }
+    }
+
+    override fun onUpdateSelection(
+        oldSelStart: Int, oldSelEnd: Int, newSelStart: Int, newSelEnd: Int,
+        candidatesStart: Int, candidatesEnd: Int,
+    ) {
+        super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+        refreshSuggestions()
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
@@ -93,6 +164,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         kv?.shift = ShiftState.OFF
         updatePosture(animate = false)
         apply(animate = false) // luôn áp cài đặt mới nhất mỗi lần bàn phím hiện
+        refreshSuggestions()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -104,6 +176,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         if (key == "one_left") return
         updatePosture(animate = false)
         apply(animate = false)
+        refreshSuggestions()
     }
 
     // ================= Tư thế máy =================
@@ -148,10 +221,14 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
     override fun onKey(key: Key) {
         val v = kv ?: return
         when (key.kind) {
-            KeyKind.CHAR -> if (v.symbols) commit(v.outputOf(key).toString()) else typeChar(key.ch)
-            KeyKind.SPACE -> commit(" ")
+            KeyKind.CHAR -> {
+                val out = v.outputOf(key)
+                if (!out.isLetterOrDigit()) learnCurrentWord() // dấu câu kết thúc một chữ
+                if (v.symbols) commit(out.toString()) else typeChar(key.ch)
+            }
+            KeyKind.SPACE -> { learnCurrentWord(); commit(" ") }
             KeyKind.BACKSPACE -> sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
-            KeyKind.ENTER -> enter()
+            KeyKind.ENTER -> { learnCurrentWord(); enter() }
             KeyKind.SHIFT -> if (v.symbols) {
                 v.symPage = if (v.symPage == 1) 2 else 1 // lật trang ký hiệu
             } else {
@@ -163,7 +240,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
                 }
                 lastShiftTap = now
             }
-            KeyKind.SYMBOLS -> v.symPage = if (v.symbols) 0 else 1
+            KeyKind.SYMBOLS -> { v.symPage = if (v.symbols) 0 else 1; refreshSuggestions() }
             KeyKind.PASTE -> paste()
             KeyKind.HIDE -> requestHideSelf(0)
             KeyKind.SETTINGS -> startActivity(

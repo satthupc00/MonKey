@@ -1,5 +1,12 @@
 # Nhật ký thay đổi MonKey
 
+## v1.9.0
+**Hàng gợi ý chữ**
+
+- Thêm hàng gợi ý trên cùng bàn phím: MonKey nhớ các chữ bạn hay gõ và gợi ý khi gõ dở (không cần đúng dấu: "vie" → "Việt"); vừa gõ xong một chữ thì gợi ý chữ hay đi tiếp theo.
+- Bấm vào gợi ý là điền luôn chữ đó kèm dấu cách.
+- Dữ liệu chỉ lưu trong máy; không học ở ô mật khẩu / chế độ ẩn danh. Tắt hàng gợi ý hoặc xoá dữ liệu trong Cài đặt.
+
 ## v1.8.0
 - Giữ phím cách khoảng 0,3 giây rồi kéo trái/phải để dời con trỏ (mỗi ~10dp = 1 ký tự). Vuốt nhanh không giữ vẫn dùng để chuyển bàn phím một tay như cũ.
 

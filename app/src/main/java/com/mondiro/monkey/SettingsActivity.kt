@@ -45,6 +45,15 @@ class SettingsActivity : Activity() {
         slider(R.id.seekOneLift, R.id.valOneLift, 0, 200, prefs.oneLift, " dp") { prefs.oneLift = it }
         toggle(R.id.swDup, prefs.dupMiddle) { prefs.dupMiddle = it }
         toggle(R.id.swSmartTone, prefs.smartTone) { prefs.smartTone = it }
+        toggle(R.id.swSuggest, prefs.suggestions) { prefs.suggestions = it }
+        findViewById<Button>(R.id.btnClearWords).setOnClickListener {
+            AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle("Xoá dữ liệu gợi ý?")
+                .setMessage("MonKey sẽ quên hết các chữ bạn đã gõ.")
+                .setPositiveButton("Xoá") { _, _ -> WordStore.get(this).clear(); toast("Đã xoá dữ liệu gợi ý") }
+                .setNegativeButton("Huỷ", null)
+                .show()
+        }
         toggle(R.id.swOldStyle, prefs.oldToneStyle) { prefs.oldToneStyle = it }
         findViewById<Button>(R.id.btnReset).setOnClickListener {
             AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
