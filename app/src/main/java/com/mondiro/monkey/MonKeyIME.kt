@@ -306,6 +306,10 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener, VoiceInput.Callba
             )
             return
         }
+        if (isPasswordField()) {
+            kv?.voiceStatus = "Không dùng giọng nói ở ô mật khẩu"
+            return
+        }
         if (!voice.isAvailable()) {
             kv?.voiceStatus = "Máy chưa có bộ nhận giọng nói (cài app Google)"
             return
