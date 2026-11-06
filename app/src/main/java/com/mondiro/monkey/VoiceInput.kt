@@ -50,7 +50,7 @@ class VoiceInput(private val context: Context, private val cb: Callback) : Recog
         active = true
         stopping = false
         silentRestarts = 0
-        cb.onStatus("Đang nghe… chạm để dừng")
+        cb.onStatus("Đang nghe…")
         listen()
     }
 
@@ -60,6 +60,16 @@ class VoiceInput(private val context: Context, private val cb: Callback) : Recog
         stopping = true
         cb.onStatus("Đang xử lý…")
         recognizer?.stopListening()
+    }
+
+    /** Bỏ đoạn đang nói dở và nghe lại từ đầu (dùng cho nút "Xoá hết"). */
+    fun restart() {
+        if (!active) return
+        recognizer?.cancel()
+        silentRestarts = 0
+        stopping = false
+        cb.onStatus("Đang nghe…")
+        listen()
     }
 
     /** Huỷ ngay (vd khi bàn phím bị ẩn). */
@@ -125,6 +135,8 @@ class VoiceInput(private val context: Context, private val cb: Callback) : Recog
     }
 
     override fun onError(error: Int) {
+        // Lỗi do chính MonKey huỷ đoạn cũ (nút "Xoá hết") -> bỏ qua, vẫn đang nghe đoạn mới
+        if (error == SpeechRecognizer.ERROR_CLIENT && active && !stopping) return
         val silent = error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
         cb.onFinal("") // chốt phần chữ tạm (nếu có)
         if (active && !stopping && silent && ++silentRestarts <= MAX_SILENT_RESTARTS) {

@@ -51,6 +51,15 @@ class SettingsActivity : Activity() {
         toggle(R.id.swDup, prefs.dupMiddle) { prefs.dupMiddle = it }
         toggle(R.id.swSmartTone, prefs.smartTone) { prefs.smartTone = it }
         toggle(R.id.swSuggest, prefs.suggestions) { prefs.suggestions = it }
+        toggle(R.id.swVoiceAbbrev, prefs.voiceAbbrev) { prefs.voiceAbbrev = it }
+        val abbrevBox = findViewById<android.widget.EditText>(R.id.editAbbrev)
+        abbrevBox.setText(prefs.voiceAbbrevList)
+        abbrevBox.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) { prefs.voiceAbbrevList = s?.toString().orEmpty() }
+        })
+        findViewById<Button>(R.id.btnAbbrevDefault).setOnClickListener { abbrevBox.setText(Abbrev.DEFAULT) }
         findViewById<Button>(R.id.btnClearWords).setOnClickListener {
             AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle("Xoá dữ liệu gợi ý?")

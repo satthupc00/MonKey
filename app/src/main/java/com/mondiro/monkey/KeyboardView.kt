@@ -40,7 +40,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         /** Giữ phím cách rồi kéo: dời con trỏ steps ký tự (âm = sang trái). */
         fun onCursor(steps: Int)
         /** Chạm bàn phím khi đang nghe giọng nói (để dừng / đóng thông báo). */
-        fun onVoiceTap()
+        fun onVoiceTap(clear: Boolean)
     }
 
     companion object {
@@ -291,12 +291,15 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     var voiceStatus: String? = null
         set(v) { field = v; cancelTouches(); invalidate() }
 
+    private val voiceClearBtn = RectF()
+    private val voiceDoneBtn = RectF()
+
     private fun drawVoiceOverlay(cv: Canvas, status: String) {
         fill.color = cBg; fill.alpha = 225
         cv.drawRect(0f, 0f, width.toFloat(), height.toFloat(), fill)
-        val r = 34 * dp
+        val r = 30 * dp
         val cx = width / 2f
-        val cy = height / 2f - 14 * dp
+        val cy = height * 0.28f
         fill.color = cAccent; fill.alpha = 255
         cv.drawCircle(cx, cy, r, fill)
         cv.save(); cv.translate(cx, cy)
@@ -304,6 +307,25 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         cv.restore()
         cv.save(); cv.translate(cx, cy + r + 22 * dp)
         label(cv, status, 16 * dp, cText, 255)
+        cv.restore()
+
+        // Hai nút: Xoá hết | Xong
+        val bw = 128 * dp
+        val bh = 46 * dp
+        val by = (height * 0.78f).coerceAtMost(height - bh / 2 - 8 * dp)
+        val gap = 10 * dp
+        voiceClearBtn.set(cx - gap - bw, by - bh / 2, cx - gap, by + bh / 2)
+        voiceDoneBtn.set(cx + gap, by - bh / 2, cx + gap + bw, by + bh / 2)
+        val rr = 10 * dp
+        fill.color = cKey; fill.alpha = 255
+        cv.drawRoundRect(voiceClearBtn, rr, rr, fill)
+        fill.color = cAccent
+        cv.drawRoundRect(voiceDoneBtn, rr, rr, fill)
+        cv.save(); cv.translate(voiceClearBtn.centerX(), voiceClearBtn.centerY())
+        label(cv, "Xoá hết", 16 * dp, cText, 255)
+        cv.restore()
+        cv.save(); cv.translate(voiceDoneBtn.centerX(), voiceDoneBtn.centerY())
+        label(cv, "Xong", 16 * dp, cText, 255)
         cv.restore()
     }
 
@@ -524,7 +546,10 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(e: MotionEvent): Boolean {
         if (voiceStatus != null) {
-            if (e.actionMasked == MotionEvent.ACTION_UP) listener.onVoiceTap()
+            if (e.actionMasked == MotionEvent.ACTION_UP) {
+                // Nút "Xoá hết" -> xoá chữ đã nói; chỗ khác (kể cả nút "Xong") -> dừng
+                listener.onVoiceTap(clear = voiceClearBtn.contains(e.x, e.y))
+            }
             return true
         }
         if (animating) return true

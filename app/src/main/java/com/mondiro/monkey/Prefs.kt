@@ -41,6 +41,12 @@ class Prefs(context: Context) {
     var vietnamese: Boolean       // true: gõ tiếng Việt VNI · false: tiếng Anh
         get() = sp.getBoolean("vietnamese", true)
         set(v) = sp.edit().putBoolean("vietnamese", v).apply()
+    var voiceAbbrev: Boolean      // viết tắt khi gõ bằng giọng nói
+        get() = sp.getBoolean("voice_abbrev", true)
+        set(v) = sp.edit().putBoolean("voice_abbrev", v).apply()
+    var voiceAbbrevList: String   // mỗi dòng "từ gốc=viết tắt"
+        get() = sp.getString("voice_abbrev_list", null) ?: Abbrev.DEFAULT
+        set(v) = sp.edit().putString("voice_abbrev_list", v).apply()
     var smartTone: Boolean        // tự bỏ dấu đúng chỗ
         get() = sp.getBoolean("smart_tone", true)
         set(v) = sp.edit().putBoolean("smart_tone", v).apply()

@@ -32,6 +32,9 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener, VoiceInput.Callba
     private val voice by lazy { VoiceInput(this, this) }
     /** Dấu cách thêm trước đoạn giọng nói (nếu trước con trỏ đang là chữ), null = chưa bắt đầu đoạn. */
     private var voicePrefix: String? = null
+    /** Chữ tạm của đoạn đang nói (đang hiện trong ô gõ) và tổng số ký tự đã gõ ra trong lần nói này. */
+    private var voiceComposing = ""
+    private var voiceInserted = 0
     private val scope: CoroutineScope = MainScope()
 
     private var mode = Mode.NORMAL
@@ -308,11 +311,36 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener, VoiceInput.Callba
             return
         }
         voicePrefix = null
+        voiceComposing = ""
+        voiceInserted = 0
         voice.start()
     }
 
-    override fun onVoiceTap() {
-        if (voice.active) voice.stop() else kv?.voiceStatus = null
+    override fun onVoiceTap(clear: Boolean) {
+        if (!voice.active) { kv?.voiceStatus = null; return }
+        if (!clear) { voice.stop(); return }
+        // Xoá hết chữ đã nói trong lần này rồi nghe lại
+        val ic = currentInputConnection ?: return
+        ic.beginBatchEdit()
+        ic.setComposingText("", 1)
+        ic.finishComposingText()
+        if (voiceInserted > 0) ic.deleteSurroundingText(voiceInserted, 0)
+        ic.endBatchEdit()
+        voiceInserted = 0
+        voiceComposing = ""
+        voicePrefix = null
+        voice.restart()
+    }
+
+    /** Chuyển "không" -> "ko"… theo danh sách trong Cài đặt (nếu bật). */
+    private fun abbreviate(text: String): String =
+        if (prefs.voiceAbbrev) Abbrev.apply(text, abbrevRules()) else text
+
+    private var abbrevCache: Pair<String, List<Abbrev.Rule>>? = null
+    private fun abbrevRules(): List<Abbrev.Rule> {
+        val spec = prefs.voiceAbbrevList
+        abbrevCache?.let { if (it.first == spec) return it.second }
+        return Abbrev.parse(spec).also { abbrevCache = spec to it }
     }
 
     private fun voiceSegmentPrefix(): String {
@@ -322,16 +350,21 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener, VoiceInput.Callba
     }
 
     override fun onPartial(text: String) {
-        currentInputConnection?.setComposingText(voiceSegmentPrefix() + text, 1)
+        voiceComposing = voiceSegmentPrefix() + abbreviate(text)
+        currentInputConnection?.setComposingText(voiceComposing, 1)
     }
 
     override fun onFinal(text: String) {
         val ic = currentInputConnection ?: return
         if (text.isEmpty()) {
             ic.finishComposingText()
+            voiceInserted += voiceComposing.length
         } else {
-            ic.commitText(voiceSegmentPrefix() + text, 1)
+            val out = voiceSegmentPrefix() + abbreviate(text)
+            ic.commitText(out, 1)
+            voiceInserted += out.length
         }
+        voiceComposing = ""
         voicePrefix = null
     }
 

@@ -1,5 +1,9 @@
 # Nhật ký thay đổi MonKey
 
+## v1.13.0
+- Gõ bằng giọng nói tự viết tắt: không → ko, tôi → tui, anh/em → a/e, được → dc, với → vs, rồi → r, gì → j, bây giờ → bh… Sửa danh sách hoặc tắt trong Cài đặt → Gõ bằng giọng nói.
+- Màn đang nghe có 2 nút: "Xoá hết" (xoá chữ vừa nói và nghe lại) và "Xong".
+
 ## v1.12.0
 **Gõ bằng giọng nói**
 
