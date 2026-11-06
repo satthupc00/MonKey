@@ -36,7 +36,7 @@ class Prefs(context: Context) {
         get() = sp.getInt("one_key_width", 100)
         set(v) = sp.edit().putInt("one_key_width", v).apply()
     var suggestions: Boolean      // hàng gợi ý chữ
-        get() = sp.getBoolean("suggestions", true)
+        get() = sp.getBoolean("suggestions", false)
         set(v) = sp.edit().putBoolean("suggestions", v).apply()
     var vietnamese: Boolean       // true: gõ tiếng Việt VNI · false: tiếng Anh
         get() = sp.getBoolean("vietnamese", true)

@@ -1,5 +1,10 @@
 # Nhật ký thay đổi MonKey
 
+## v1.11.0
+- Đổi tiếng Việt / tiếng Anh bằng cách giữ phím cách rồi thả (không kéo); phím cách hiện "MonKey VNI" hoặc "MonKey Eng". Bỏ phím VI/EN riêng, phím cách màn ngoài rộng lại như cũ.
+- Giữ phím cách rồi kéo trái/phải vẫn dời con trỏ như trước.
+- Hàng gợi ý chữ mặc định tắt, bật lại trong Cài đặt → "Hàng gợi ý chữ".
+
 ## v1.10.0
 **Chuyển gõ tiếng Anh**
 

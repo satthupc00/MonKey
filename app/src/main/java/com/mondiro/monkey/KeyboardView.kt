@@ -160,6 +160,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         var curY = downY
         var cursor = false   // đang ở chế độ kéo phím cách để dời con trỏ
         var anchorX = 0f
+        var moved = false    // đã dời con trỏ ít nhất 1 bước
     }
     private val ptrs = HashMap<Int, Ptr>()
     private val handler = Handler(Looper.getMainLooper())
@@ -320,8 +321,13 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                 }
             }
             KeyKind.SPACE -> {
-                val moving = ptrs.values.any { it.cursor && it.key?.id == k.id }
-                label(cv, if (moving) "◀  con trỏ  ▶" else spaceLabel(), s * 0.36f, if (moving) cText else cDim, a)
+                val held = ptrs.values.firstOrNull { it.cursor && it.key?.id == k.id }
+                val lbl = when {
+                    held == null -> spaceLabel()
+                    held.moved -> "◀  con trỏ  ▶"
+                    else -> if (vietnamese) "Thả: Eng" else "Thả: VNI" // thả tay để đổi ngôn ngữ
+                }
+                label(cv, lbl, s * 0.36f, if (held != null) cText else cDim, a)
             }
             KeyKind.SYMBOLS -> label(cv, if (symbols) "ABC" else "?123", s * 0.36f, cText, a)
             KeyKind.SHIFT -> if (symbols) {
@@ -421,9 +427,9 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
     }
 
     private fun spaceLabel() = when (mode) {
-        Mode.ONE_LEFT, Mode.ONE_RIGHT -> "← vuốt →"
-        Mode.ARC -> if (vietnamese) "VNI" else "EN"
-        Mode.NORMAL -> if (vietnamese) "MonKey VNI" else "MonKey EN"
+        Mode.ONE_LEFT, Mode.ONE_RIGHT -> if (vietnamese) "← VNI →" else "← Eng →"
+        Mode.ARC -> if (vietnamese) "VNI" else "Eng"
+        Mode.NORMAL -> if (vietnamese) "MonKey VNI" else "MonKey Eng"
     }
 
     private fun label(cv: Canvas, s: String, size: Float, color: Int, a: Int) {
@@ -528,7 +534,10 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                 if (id == holdPtr) { handler.removeCallbacks(hold); holdPtr = -1 }
                 if (id == spacePtr) { handler.removeCallbacks(spaceHold); spacePtr = -1 }
                 val k = p?.key
-                if (p != null && k != null && !p.done && !p.cursor) {
+                if (p != null && k != null && p.cursor && !p.moved) {
+                    // Giữ phím cách rồi thả mà không kéo: đổi VNI <-> Eng
+                    listener.onKey(k.copy(kind = KeyKind.LANG))
+                } else if (p != null && k != null && !p.done && !p.cursor) {
                     when (k.kind) {
                         KeyKind.SPACE -> space(k, e.getX(i) - p.downX, e.getY(i) - p.downY)
                         KeyKind.CHAR -> commitChar(p, k)
@@ -548,6 +557,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                     val n = ((p.curX - p.anchorX) / step).toInt()
                     if (n != 0) {
                         listener.onCursor(n)
+                        if (!p.moved) { p.moved = true; invalidate() }
                         p.anchorX += n * step
                     }
                 }
