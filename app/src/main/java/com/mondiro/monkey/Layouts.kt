@@ -8,7 +8,7 @@ import kotlin.math.sin
 
 enum class Mode { NORMAL, ARC, ONE_LEFT, ONE_RIGHT }
 
-enum class KeyKind { CHAR, SHIFT, BACKSPACE, ENTER, SPACE, SYMBOLS, SETTINGS, PASTE, HIDE, LANG, ROUND_SWAP, ROUND_TWO }
+enum class KeyKind { CHAR, SHIFT, BACKSPACE, ENTER, SPACE, SYMBOLS, SETTINGS, PASTE, HIDE, LANG, MIC, ROUND_SWAP, ROUND_TWO }
 
 /** Một phím đã đặt chỗ: tâm (cx, cy), kích thước, góc xoay (độ, theo chiều kim đồng hồ). */
 data class Key(

@@ -22,13 +22,16 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-class MonKeyIME : InputMethodService(), KeyboardView.Listener,
+class MonKeyIME : InputMethodService(), KeyboardView.Listener, VoiceInput.Callback,
     SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var prefs: Prefs
     private var kv: KeyboardView? = null
     private var bar: SuggestionBar? = null
     private val store by lazy { WordStore.get(this) }
+    private val voice by lazy { VoiceInput(this, this) }
+    /** Dấu cách thêm trước đoạn giọng nói (nếu trước con trỏ đang là chữ), null = chưa bắt đầu đoạn. */
+    private var voicePrefix: String? = null
     private val scope: CoroutineScope = MainScope()
 
     private var mode = Mode.NORMAL
@@ -58,7 +61,13 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         }
     }
 
+    override fun onFinishInputView(finishingInput: Boolean) {
+        voice.cancel()
+        super.onFinishInputView(finishingInput)
+    }
+
     override fun onDestroy() {
+        voice.destroy()
         prefs.sp.unregisterOnSharedPreferenceChangeListener(this)
         scope.cancel()
         super.onDestroy()
@@ -249,6 +258,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
                 v.vietnamese = typingVietnamese()
             }
             KeyKind.HIDE -> requestHideSelf(0)
+            KeyKind.MIC -> startVoice()
             KeyKind.SETTINGS -> startActivity(
                 Intent(this, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
@@ -280,6 +290,54 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
     }
 
     override fun onText(s: String) = commit(s)
+
+    // ================= Gõ bằng giọng nói =================
+
+    private fun startVoice() {
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            // Bàn phím không tự hỏi quyền được: mở màn Cài đặt MonKey để xin quyền micro
+            startActivity(
+                Intent(this, SettingsActivity::class.java)
+                    .putExtra(SettingsActivity.EXTRA_REQUEST_MIC, true)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            return
+        }
+        if (!voice.isAvailable()) {
+            kv?.voiceStatus = "Máy chưa có bộ nhận giọng nói (cài app Google)"
+            return
+        }
+        voicePrefix = null
+        voice.start()
+    }
+
+    override fun onVoiceTap() {
+        if (voice.active) voice.stop() else kv?.voiceStatus = null
+    }
+
+    private fun voiceSegmentPrefix(): String {
+        voicePrefix?.let { return it }
+        val before = currentInputConnection?.getTextBeforeCursor(1, 0)?.toString().orEmpty()
+        return (if (before.isNotEmpty() && !before.last().isWhitespace()) " " else "").also { voicePrefix = it }
+    }
+
+    override fun onPartial(text: String) {
+        currentInputConnection?.setComposingText(voiceSegmentPrefix() + text, 1)
+    }
+
+    override fun onFinal(text: String) {
+        val ic = currentInputConnection ?: return
+        if (text.isEmpty()) {
+            ic.finishComposingText()
+        } else {
+            ic.commitText(voiceSegmentPrefix() + text, 1)
+        }
+        voicePrefix = null
+    }
+
+    override fun onStatus(message: String?) {
+        kv?.voiceStatus = message
+    }
 
     override fun onCursor(steps: Int) {
         val code = if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT

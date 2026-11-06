@@ -17,6 +17,11 @@ import kotlin.concurrent.thread
 
 class SettingsActivity : Activity() {
 
+    companion object {
+        /** Bàn phím mở màn này để xin quyền micro (gõ bằng giọng nói). */
+        const val EXTRA_REQUEST_MIC = "request_mic"
+    }
+
     private lateinit var prefs: Prefs
     private lateinit var latest: TextView
 
@@ -68,6 +73,7 @@ class SettingsActivity : Activity() {
         toggle(R.id.swPosture, prefs.autoPosture) { prefs.autoPosture = it }
 
         checkUpdate(manual = false)
+        if (intent.getBooleanExtra(EXTRA_REQUEST_MIC, false)) askMicPermission()
     }
 
     private fun slider(seekId: Int, valId: Int, min: Int, max: Int, value: Int, unit: String, save: (Int) -> Unit) {
@@ -143,4 +149,17 @@ class SettingsActivity : Activity() {
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_LONG).show()
+
+    private fun askMicPermission() {
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) return
+        toast("Cho phép micro để gõ bằng giọng nói (giữ phím 0)")
+        requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 1)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 1 && grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            toast("Đã cho phép micro. Quay lại ô gõ và giữ phím 0 để nói.")
+        }
+    }
 }

@@ -39,6 +39,8 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         fun onDeleteWord()
         /** Giữ phím cách rồi kéo: dời con trỏ steps ký tự (âm = sang trái). */
         fun onCursor(steps: Int)
+        /** Chạm bàn phím khi đang nghe giọng nói (để dừng / đóng thông báo). */
+        fun onVoiceTap()
     }
 
     companion object {
@@ -56,7 +58,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
             'z' to '*', 'x' to '"', 'c' to '\'', 'v' to ':', 'b' to ';', 'n' to '!', 'm' to '?',
         )
         /** Phím phụ dạng chức năng khi giữ: ',' -> cài đặt, '.' -> dán. */
-        val ACTION_SUBS = mapOf(',' to KeyKind.SETTINGS, '.' to KeyKind.PASTE)
+        val ACTION_SUBS = mapOf(',' to KeyKind.SETTINGS, '.' to KeyKind.PASTE, '0' to KeyKind.MIC)
         private const val ANIM_MS = 450L
         private const val HOLD_MS = 280L
     }
@@ -145,6 +147,12 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         addRect(RectF(-0.3f, -0.95f, 0.3f, -0.6f), Path.Direction.CW)
         moveTo(-0.35f, 0f); lineTo(0.35f, 0f)
         moveTo(-0.35f, 0.4f); lineTo(0.2f, 0.4f)
+    }
+    private val micPath = Path().apply {
+        addRoundRect(RectF(-0.32f, -0.95f, 0.32f, 0.2f), 0.32f, 0.32f, Path.Direction.CW)
+        addArc(RectF(-0.6f, -0.45f, 0.6f, 0.55f), 0f, 180f)
+        moveTo(0f, 0.55f); lineTo(0f, 0.85f)
+        moveTo(-0.32f, 0.88f); lineTo(0.32f, 0.88f)
     }
     private val chevronPath = Path().apply {
         moveTo(-0.7f, -0.35f); lineTo(0f, 0.35f); lineTo(0.7f, -0.35f)
@@ -276,6 +284,27 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
         val pressed = ptrs.values.mapNotNull { it.key?.id }.toHashSet()
         for (k in frameKeys()) drawKey(canvas, k, k.id in pressed)
         for (p in ptrs.values) if (p.sub) p.key?.let { drawPopup(canvas, it) }
+        voiceStatus?.let { drawVoiceOverlay(canvas, it) }
+    }
+
+    /** Thông báo gõ bằng giọng nói đang chạy (null = không). Khi hiện, chạm bàn phím để dừng. */
+    var voiceStatus: String? = null
+        set(v) { field = v; cancelTouches(); invalidate() }
+
+    private fun drawVoiceOverlay(cv: Canvas, status: String) {
+        fill.color = cBg; fill.alpha = 225
+        cv.drawRect(0f, 0f, width.toFloat(), height.toFloat(), fill)
+        val r = 34 * dp
+        val cx = width / 2f
+        val cy = height / 2f - 14 * dp
+        fill.color = cAccent; fill.alpha = 255
+        cv.drawCircle(cx, cy, r, fill)
+        cv.save(); cv.translate(cx, cy)
+        drawIcon(cv, micPath, r * 0.5f, cText, 255, width = 2.4f)
+        cv.restore()
+        cv.save(); cv.translate(cx, cy + r + 22 * dp)
+        label(cv, status, 16 * dp, cText, 255)
+        cv.restore()
     }
 
     private fun drawKey(cv: Canvas, k: Key, down: Boolean) {
@@ -346,7 +375,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
                 drawIcon(cv, backX, s * 0.3f, if (down) cKeyDown else cKeyFn, a, width = 2.6f)
             }
             KeyKind.ENTER -> drawIcon(cv, enterPath, s * 0.3f, cText, a, width = 2.6f)
-            KeyKind.SETTINGS, KeyKind.PASTE, KeyKind.HIDE -> drawActionIcon(cv, k.kind, s * 0.27f, cText, a)
+            KeyKind.SETTINGS, KeyKind.PASTE, KeyKind.HIDE, KeyKind.MIC -> drawActionIcon(cv, k.kind, s * 0.27f, cText, a)
             KeyKind.ROUND_SWAP -> label(cv, "Đổi bên", s * 0.22f, cText, a)
             KeyKind.ROUND_TWO -> label(cv, "Hai tay", s * 0.22f, cText, a)
             KeyKind.LANG -> label(cv, if (vietnamese) "VI" else "EN", s * 0.36f, if (vietnamese) cText else cAccent, a)
@@ -360,6 +389,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
             KeyKind.SETTINGS -> drawGear(cv, size, a, color)
             KeyKind.PASTE -> drawIcon(cv, pastePath, size * 0.9f, color, a)
             KeyKind.HIDE -> drawIcon(cv, hidePath, size, color, a)
+            KeyKind.MIC -> drawIcon(cv, micPath, size, color, a)
             else -> {}
         }
     }
@@ -493,6 +523,10 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(e: MotionEvent): Boolean {
+        if (voiceStatus != null) {
+            if (e.actionMasked == MotionEvent.ACTION_UP) listener.onVoiceTap()
+            return true
+        }
         if (animating) return true
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
