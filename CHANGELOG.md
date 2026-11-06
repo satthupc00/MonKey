@@ -1,5 +1,12 @@
 # Nhật ký thay đổi MonKey
 
+## v1.10.0
+**Chuyển gõ tiếng Anh**
+
+- Thêm phím VI/EN để chuyển giữa gõ tiếng Việt (VNI) và tiếng Anh. Ở chế độ EN, phím số luôn ra số, không bỏ dấu.
+- Ô mật khẩu luôn tự gõ tiếng Anh, mật khẩu không bao giờ bị nhảy dấu.
+- Vị trí phím: màn ngoài cạnh dấu phẩy; vòng cung ở giữa (cạnh cài đặt và dán); một tay là nút tròn bên cạnh. Phím cách hiện "VNI" hoặc "EN" theo chế độ đang dùng.
+
 ## v1.9.0
 **Hàng gợi ý chữ**
 

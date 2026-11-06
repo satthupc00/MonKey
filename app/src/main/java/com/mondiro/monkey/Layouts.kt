@@ -8,7 +8,7 @@ import kotlin.math.sin
 
 enum class Mode { NORMAL, ARC, ONE_LEFT, ONE_RIGHT }
 
-enum class KeyKind { CHAR, SHIFT, BACKSPACE, ENTER, SPACE, SYMBOLS, SETTINGS, PASTE, HIDE, ROUND_SWAP, ROUND_TWO }
+enum class KeyKind { CHAR, SHIFT, BACKSPACE, ENTER, SPACE, SYMBOLS, SETTINGS, PASTE, HIDE, LANG, ROUND_SWAP, ROUND_TWO }
 
 /** Một phím đã đặt chỗ: tâm (cx, cy), kích thước, góc xoay (độ, theo chiều kim đồng hồ). */
 data class Key(
@@ -114,8 +114,8 @@ object Layouts {
             chars("asdfghjkl") to 0.5f,
             listOf(k("shift", KeyKind.SHIFT, 1.5f)) + chars("zxcvbnm") + k("back", KeyKind.BACKSPACE, 1.5f) to 0f,
             listOf(
-                k("sym_L", KeyKind.SYMBOLS, 1.5f), c(','), k("space_L", KeyKind.SPACE, 5f),
-                c('.'), k("enter", KeyKind.ENTER, 1.5f),
+                k("sym_L", KeyKind.SYMBOLS, 1.5f), k("lang", KeyKind.LANG, 1f), c(','),
+                k("space_L", KeyKind.SPACE, 4f), c('.'), k("enter", KeyKind.ENTER, 1.5f),
             ) to 0f,
         )
         val out = ArrayList<Key>()
@@ -183,9 +183,10 @@ object Layouts {
 
         val g = c.keySize * 1.1f
         val cy = bottom - g / 2
-        val gear = Key("gear", KeyKind.SETTINGS, cx = w / 2 - g * 0.7f, cy = cy, w = g, h = g, round = true)
-        val paste = Key("paste", KeyKind.PASTE, cx = w / 2 + g * 0.7f, cy = cy, w = g, h = g, round = true)
-        return left + right + gear + paste
+        val gear = Key("gear", KeyKind.SETTINGS, cx = w / 2 - g * 1.25f, cy = cy, w = g, h = g, round = true)
+        val lang = Key("lang", KeyKind.LANG, cx = w / 2, cy = cy, w = g, h = g, round = true)
+        val paste = Key("paste", KeyKind.PASTE, cx = w / 2 + g * 1.25f, cy = cy, w = g, h = g, round = true)
+        return left + right + gear + lang + paste
     }
 
     // ---------------- Bàn phím một tay ----------------
@@ -242,14 +243,15 @@ object Layouts {
         val gapX = 28 * c.dp
         val bx = if (left) bb.right + gapX + rad else bb.left - gapX - rad
         val d = rad * 2
-        // 4 nút xếp dọc, co khoảng cách cho vừa chiều cao bàn phím
-        val step = minOf(rad * 2.3f, (h - 2 * pad(c) - d) / 3f)
-        val my = bb.centerY().coerceIn(pad(c) + rad + step * 1.5f, h - pad(c) - rad - step * 1.5f)
+        // 5 nút xếp dọc, co khoảng cách cho vừa chiều cao bàn phím
+        val step = minOf(rad * 2.2f, (h - 2 * pad(c) - d) / 4f)
+        val my = bb.centerY().coerceIn(pad(c) + rad + step * 2, h - pad(c) - rad - step * 2)
         keys = keys + listOf(
-            Key("swap", KeyKind.ROUND_SWAP, cx = bx, cy = my - step * 1.5f, w = d, h = d, round = true),
-            Key("two", KeyKind.ROUND_TWO, cx = bx, cy = my - step * 0.5f, w = d, h = d, round = true),
-            Key("paste", KeyKind.PASTE, cx = bx, cy = my + step * 0.5f, w = d, h = d, round = true),
-            Key("gear", KeyKind.SETTINGS, cx = bx, cy = my + step * 1.5f, w = d, h = d, round = true),
+            Key("swap", KeyKind.ROUND_SWAP, cx = bx, cy = my - step * 2, w = d, h = d, round = true),
+            Key("two", KeyKind.ROUND_TWO, cx = bx, cy = my - step, w = d, h = d, round = true),
+            Key("lang", KeyKind.LANG, cx = bx, cy = my, w = d, h = d, round = true),
+            Key("paste", KeyKind.PASTE, cx = bx, cy = my + step, w = d, h = d, round = true),
+            Key("gear", KeyKind.SETTINGS, cx = bx, cy = my + step * 2, w = d, h = d, round = true),
         )
         return keys
     }

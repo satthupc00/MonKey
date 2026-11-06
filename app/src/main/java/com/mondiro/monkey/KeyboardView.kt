@@ -80,6 +80,9 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
             if (mode == Mode.NORMAL && width > 0) rebuild(false) else invalidate()
         }
     val symbols get() = symPage > 0
+    /** true = gõ tiếng Việt (VNI), false = tiếng Anh (không bỏ dấu). */
+    var vietnamese = true
+        set(v) { field = v; invalidate() }
     /** Độ mạnh rung 0..100 (0 = tắt). */
     var vibrateStrength = 50
 
@@ -340,6 +343,7 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
             KeyKind.SETTINGS, KeyKind.PASTE, KeyKind.HIDE -> drawActionIcon(cv, k.kind, s * 0.27f, cText, a)
             KeyKind.ROUND_SWAP -> label(cv, "Đổi bên", s * 0.22f, cText, a)
             KeyKind.ROUND_TWO -> label(cv, "Hai tay", s * 0.22f, cText, a)
+            KeyKind.LANG -> label(cv, if (vietnamese) "VI" else "EN", s * 0.36f, if (vietnamese) cText else cAccent, a)
         }
         cv.restore()
     }
@@ -418,8 +422,8 @@ class KeyboardView(context: Context, private val listener: Listener) : View(cont
 
     private fun spaceLabel() = when (mode) {
         Mode.ONE_LEFT, Mode.ONE_RIGHT -> "← vuốt →"
-        Mode.ARC -> "VNI"
-        Mode.NORMAL -> "MonKey VNI"
+        Mode.ARC -> if (vietnamese) "VNI" else "EN"
+        Mode.NORMAL -> if (vietnamese) "MonKey VNI" else "MonKey EN"
     }
 
     private fun label(cv: Canvas, s: String, size: Float, color: Int, a: Int) {

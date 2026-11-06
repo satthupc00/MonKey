@@ -164,6 +164,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         kv?.shift = ShiftState.OFF
         updatePosture(animate = false)
         apply(animate = false) // luôn áp cài đặt mới nhất mỗi lần bàn phím hiện
+        kv?.vietnamese = typingVietnamese()
         refreshSuggestions()
     }
 
@@ -174,6 +175,7 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
 
     override fun onSharedPreferenceChanged(sp: SharedPreferences?, key: String?) {
         if (key == "one_left") return
+        if (key == "vietnamese") { kv?.vietnamese = typingVietnamese(); return }
         updatePosture(animate = false)
         apply(animate = false)
         refreshSuggestions()
@@ -242,6 +244,10 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
             }
             KeyKind.SYMBOLS -> { v.symPage = if (v.symbols) 0 else 1; refreshSuggestions() }
             KeyKind.PASTE -> paste()
+            KeyKind.LANG -> {
+                prefs.vietnamese = !prefs.vietnamese
+                v.vietnamese = typingVietnamese()
+            }
             KeyKind.HIDE -> requestHideSelf(0)
             KeyKind.SETTINGS -> startActivity(
                 Intent(this, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -300,15 +306,33 @@ class MonKeyIME : InputMethodService(), KeyboardView.Listener,
         if (text.isNotEmpty()) commit(text)
     }
 
+    private fun isPasswordField(): Boolean {
+        val t = currentInputEditorInfo?.inputType ?: return false
+        val cls = t and InputType.TYPE_MASK_CLASS
+        val variation = t and InputType.TYPE_MASK_VARIATION
+        return (cls == InputType.TYPE_CLASS_TEXT && (
+            variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
+                variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
+                variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD)) ||
+            (cls == InputType.TYPE_CLASS_NUMBER && variation == InputType.TYPE_NUMBER_VARIATION_PASSWORD)
+    }
+
+    /** Gõ tiếng Việt khi đang bật VI và không phải ô mật khẩu (ô mật khẩu luôn gõ tiếng Anh). */
+    private fun typingVietnamese() = prefs.vietnamese && !isPasswordField()
+
     private fun typeChar(ch: Char) {
         val v = kv ?: return
+        if (ch.isDigit() && !typingVietnamese()) {
+            commit(ch.toString())
+            return
+        }
         if (ch.isDigit()) {
             typeVniDigit(ch)
             return
         }
         commit((if (v.shift != ShiftState.OFF) ch.uppercaseChar() else ch).toString())
         if (v.shift == ShiftState.ONCE) v.shift = ShiftState.OFF
-        if (prefs.smartTone) fixTonePosition()
+        if (prefs.smartTone && typingVietnamese()) fixTonePosition()
     }
 
     /** Sau khi gõ thêm chữ: dời dấu thanh về đúng chỗ (vd "hòa" + n -> "hoàn"). */

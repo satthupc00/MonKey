@@ -38,6 +38,9 @@ class Prefs(context: Context) {
     var suggestions: Boolean      // hàng gợi ý chữ
         get() = sp.getBoolean("suggestions", true)
         set(v) = sp.edit().putBoolean("suggestions", v).apply()
+    var vietnamese: Boolean       // true: gõ tiếng Việt VNI · false: tiếng Anh
+        get() = sp.getBoolean("vietnamese", true)
+        set(v) = sp.edit().putBoolean("vietnamese", v).apply()
     var smartTone: Boolean        // tự bỏ dấu đúng chỗ
         get() = sp.getBoolean("smart_tone", true)
         set(v) = sp.edit().putBoolean("smart_tone", v).apply()
