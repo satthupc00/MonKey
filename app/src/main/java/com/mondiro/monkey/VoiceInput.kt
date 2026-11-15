@@ -42,6 +42,7 @@ class VoiceInput(private val context: Context, private val cb: Callback) : Recog
     private var stopping = false
     private var silentRestarts = 0
     private var recognizer: SpeechRecognizer? = null
+    private var reconnected = false
 
     fun isAvailable() = SpeechRecognizer.isRecognitionAvailable(context)
 
@@ -50,6 +51,10 @@ class VoiceInput(private val context: Context, private val cb: Callback) : Recog
         active = true
         stopping = false
         silentRestarts = 0
+        reconnected = false
+        // Luôn tạo kết nối mới: kết nối cũ có thể đã bị Android đóng khi lâu không dùng (lỗi mã 11)
+        recognizer?.destroy()
+        recognizer = null
         cb.onStatus("Đang nghe…")
         listen()
     }
@@ -130,11 +135,21 @@ class VoiceInput(private val context: Context, private val cb: Callback) : Recog
     override fun onResults(results: Bundle?) {
         val t = first(results)
         cb.onFinal(t)
-        if (t.isNotEmpty()) silentRestarts = 0
+        if (t.isNotEmpty()) { silentRestarts = 0; reconnected = false }
         if (active && !stopping) listen() else finish()
     }
 
     override fun onError(error: Int) {
+        // Mất kết nối với dịch vụ giọng nói / dịch vụ bận: tạo kết nối mới và thử lại 1 lần
+        if ((error == SpeechRecognizer.ERROR_SERVER_DISCONNECTED || error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY) &&
+            active && !stopping && !reconnected
+        ) {
+            reconnected = true
+            recognizer?.destroy()
+            recognizer = null
+            listen()
+            return
+        }
         // Lỗi do chính MonKey huỷ đoạn cũ (nút "Xoá hết") -> bỏ qua, vẫn đang nghe đoạn mới
         if (error == SpeechRecognizer.ERROR_CLIENT && active && !stopping) return
         val silent = error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
@@ -149,6 +164,9 @@ class VoiceInput(private val context: Context, private val cb: Callback) : Recog
                     SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Lỗi mạng, chưa nhận được giọng nói"
                     SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Chưa cho phép micro"
                     SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Bộ nhận giọng nói đang bận, thử lại"
+                    SpeechRecognizer.ERROR_SERVER_DISCONNECTED -> "Mất kết nối với giọng nói Google, giữ phím 0 để thử lại"
+                    SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED, SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE ->
+                        "Chưa có gói tiếng Việt cho giọng nói Google"
                     else -> "Không nhận được giọng nói (mã $error)"
                 }
             )

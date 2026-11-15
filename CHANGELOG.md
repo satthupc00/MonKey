@@ -1,5 +1,9 @@
 # Nhật ký thay đổi MonKey
 
+## v1.13.2
+- Sửa lỗi giọng nói báo "Không nhận được giọng nói (mã 11)": mỗi lần nói MonKey tạo kết nối mới tới giọng nói Google và tự kết nối lại 1 lần nếu bị ngắt.
+- Thông báo lỗi giọng nói dễ hiểu hơn (mất kết nối, thiếu gói tiếng Việt).
+
 ## v1.13.1
 - Không bật giọng nói ở ô mật khẩu (theo quy chuẩn chung m-voice cho mọi app Mondiro).
 
