@@ -52,14 +52,9 @@ class SettingsActivity : Activity() {
         toggle(R.id.swSmartTone, prefs.smartTone) { prefs.smartTone = it }
         toggle(R.id.swSuggest, prefs.suggestions) { prefs.suggestions = it }
         toggle(R.id.swVoiceAbbrev, prefs.voiceAbbrev) { prefs.voiceAbbrev = it }
-        val abbrevBox = findViewById<android.widget.EditText>(R.id.editAbbrev)
-        abbrevBox.setText(prefs.voiceAbbrevList)
-        abbrevBox.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) { prefs.voiceAbbrevList = s?.toString().orEmpty() }
-        })
-        findViewById<Button>(R.id.btnAbbrevDefault).setOnClickListener { abbrevBox.setText(Abbrev.DEFAULT) }
+        findViewById<Button>(R.id.btnAbbrevList).setOnClickListener {
+            startActivity(android.content.Intent(this, AbbrevActivity::class.java))
+        }
         findViewById<Button>(R.id.btnClearWords).setOnClickListener {
             AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle("Xoá dữ liệu gợi ý?")
@@ -170,5 +165,12 @@ class SettingsActivity : Activity() {
         if (requestCode == 1 && grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
             toast("Đã cho phép micro. Quay lại ô gõ và giữ phím 0 để nói.")
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Hiện số từ trong danh sách viết tắt trên nút
+        val n = Abbrev.parse(prefs.voiceAbbrevList).size
+        findViewById<Button>(R.id.btnAbbrevList).text = "Danh sách viết tắt ($n từ) ›"
     }
 }

@@ -32,6 +32,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".AbbrevActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|keyboardHidden"
+            android:windowSoftInputMode="adjustResize" />
+
         <service
             android:name=".MonKeyIME"
             android:exported="true"

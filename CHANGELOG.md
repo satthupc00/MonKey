@@ -1,5 +1,9 @@
 # Nhật ký thay đổi MonKey
 
+## v1.14.0
+- Cài đặt gọn hơn: bỏ phần hướng dẫn "Cách dùng".
+- Danh sách viết tắt khi nói chuyển sang màn hình riêng: bấm "Danh sách viết tắt (N từ)" để mở, bấm ← hoặc nút Back để quay lại. Khôi phục mặc định có hỏi lại trước khi xoá.
+
 ## v1.13.2
 - Sửa lỗi giọng nói báo "Không nhận được giọng nói (mã 11)": mỗi lần nói MonKey tạo kết nối mới tới giọng nói Google và tự kết nối lại 1 lần nếu bị ngắt.
 - Thông báo lỗi giọng nói dễ hiểu hơn (mất kết nối, thiếu gói tiếng Việt).
