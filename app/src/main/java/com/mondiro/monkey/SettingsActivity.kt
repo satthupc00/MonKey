@@ -117,6 +117,9 @@ class SettingsActivity : Activity() {
     private var previewCard: View? = null
     private var previewKind = NONE
     private val hiddenForPreview = ArrayList<View>()
+    private var savedScrollY = 0
+    /** Bên xem trước của bàn phím một tay (chỉ để xem, không đổi bên đang dùng khi gõ). */
+    private var previewLeft = false
 
     private fun setupPreview() {
         preview = KeyboardView(this, object : KeyboardView.Listener {
@@ -132,6 +135,8 @@ class SettingsActivity : Activity() {
             preview, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
         )
         findViewById<Button>(R.id.btnPreviewDone).setOnClickListener { exitPreview() }
+        findViewById<Button>(R.id.btnPreviewLeft).setOnClickListener { previewLeft = true; updatePreview() }
+        findViewById<Button>(R.id.btnPreviewRight).setOnClickListener { previewLeft = false; updatePreview() }
     }
 
     /** Ẩn mọi mục khác, chỉ giữ thanh đang chỉnh và hiện bàn phím xem trước bên dưới. */
@@ -139,6 +144,8 @@ class SettingsActivity : Activity() {
         previewKind = kind
         if (previewCard == card) { updatePreview(); return }
         if (previewCard == null) {
+            savedScrollY = findViewById<View>(R.id.scroll).scrollY
+            previewLeft = prefs.oneLeft
             val content = findViewById<LinearLayout>(R.id.content)
             hiddenForPreview.clear()
             for (i in 0 until content.childCount) {
@@ -157,7 +164,18 @@ class SettingsActivity : Activity() {
     }
 
     private fun updatePreview() {
-        val mode = if (previewKind == ONE) (if (prefs.oneLeft) Mode.ONE_LEFT else Mode.ONE_RIGHT) else Mode.ARC
+        val one = previewKind == ONE
+        val mode = if (one) (if (previewLeft) Mode.ONE_LEFT else Mode.ONE_RIGHT) else Mode.ARC
+        val sideVis = if (one) View.VISIBLE else View.GONE
+        val left = findViewById<Button>(R.id.btnPreviewLeft)
+        val right = findViewById<Button>(R.id.btnPreviewRight)
+        left.visibility = sideVis
+        right.visibility = sideVis
+        // Bên đang xem: chữ đỏ
+        val on = getColor(R.color.accent)
+        val off = getColor(R.color.text)
+        left.setTextColor(if (previewLeft) on else off)
+        right.setTextColor(if (previewLeft) off else on)
         preview.configure(mode, prefs.layoutConfig(resources.displayMetrics.density), animate = false)
     }
 
@@ -165,6 +183,10 @@ class SettingsActivity : Activity() {
         if (previewCard == null) return
         hiddenForPreview.forEach { it.visibility = View.VISIBLE }
         hiddenForPreview.clear()
+        // Giữ nguyên vị trí đang xem trong Cài đặt
+        val scroll = findViewById<View>(R.id.scroll)
+        val y = savedScrollY
+        scroll.post { scroll.scrollTo(0, y) }
         previewCard = null
         findViewById<View>(R.id.previewBox).visibility = View.GONE
         moveCredit(android.view.Gravity.BOTTOM or android.view.Gravity.END)

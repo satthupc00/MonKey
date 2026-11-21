@@ -1,5 +1,9 @@
 # Nhật ký thay đổi MonKey
 
+## v1.15.1
+- Bấm "Xong" khi xem trước: Cài đặt giữ nguyên vị trí đang xem, không nhảy lên đầu.
+- Xem trước bàn phím một tay có nút Trái / Phải để đổi bên xem.
+
 ## v1.15.0
 **Xem trước bàn phím khi chỉnh**
 

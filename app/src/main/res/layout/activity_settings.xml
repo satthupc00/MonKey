@@ -192,12 +192,34 @@
         android:layout_gravity="bottom"
         android:orientation="vertical"
         android:visibility="gone">
-        <Button
-            android:id="@+id/btnPreviewDone"
-            style="@style/Btn"
+        <!-- Trái / Phải (chỉ hiện khi xem trước bàn phím một tay) + Xong -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
-            android:text="Xong" />
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/btnPreviewLeft"
+                style="@style/Btn"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Trái" />
+            <Button
+                android:id="@+id/btnPreviewRight"
+                style="@style/Btn"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Phải" />
+            <Button
+                android:id="@+id/btnPreviewDone"
+                style="@style/Btn"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="Xong" />
+        </LinearLayout>
         <FrameLayout
             android:id="@+id/previewHolder"
             android:layout_width="match_parent"

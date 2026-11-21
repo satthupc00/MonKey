@@ -11,8 +11,8 @@ android {
         applicationId = "com.mondiro.vnikey"
         minSdk = 26
         targetSdk = 34
-        versionCode = 20
-        versionName = "1.15.0"
+        versionCode = 21
+        versionName = "1.15.1"
     }
 
     // Khoá ký lấy từ GitHub Secrets (MONKEY_KEYSTORE, MONKEY_KEY_PASSWORD) để mọi bản build
