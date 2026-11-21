@@ -9,6 +9,8 @@ import android.provider.Settings
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
@@ -18,6 +20,10 @@ import kotlin.concurrent.thread
 class SettingsActivity : Activity() {
 
     companion object {
+        private const val NONE = 0
+        private const val TWO = 1
+        private const val ONE = 2
+
         /** Bàn phím mở màn này để xin quyền micro (gõ bằng giọng nói). */
         const val EXTRA_REQUEST_MIC = "request_mic"
     }
@@ -40,14 +46,16 @@ class SettingsActivity : Activity() {
         }
         findViewById<Button>(R.id.btnUpdate).setOnClickListener { checkUpdate(manual = true) }
 
-        slider(R.id.seekCurve, R.id.valCurve, 0, 100, prefs.curvature, "") { prefs.curvature = it }
-        slider(R.id.seekSize, R.id.valSize, 30, 56, prefs.keySize, " dp") { prefs.keySize = it }
-        slider(R.id.seekLift, R.id.valLift, 0, 150, prefs.lift, " dp") { prefs.lift = it }
-        slider(R.id.seekWidth, R.id.valWidth, 60, 100, prefs.keyWidth, "%") { prefs.keyWidth = it }
-        slider(R.id.seekInset, R.id.valInset, 0, 120, prefs.inset, " dp") { prefs.inset = it }
-        slider(R.id.seekOneWidth, R.id.valOneWidth, 60, 100, prefs.oneKeyWidth, "%") { prefs.oneKeyWidth = it }
-        slider(R.id.seekOneInset, R.id.valOneInset, 0, 200, prefs.oneInset, " dp") { prefs.oneInset = it }
-        slider(R.id.seekOneLift, R.id.valOneLift, 0, 200, prefs.oneLift, " dp") { prefs.oneLift = it }
+        setupPreview()
+        // Thanh có xem trước: TWO = bàn phím vòng cung, ONE = bàn phím một tay
+        slider(R.id.seekCurve, R.id.valCurve, 0, 100, prefs.curvature, "", TWO) { prefs.curvature = it }
+        slider(R.id.seekSize, R.id.valSize, 30, 56, prefs.keySize, " dp", TWO) { prefs.keySize = it }
+        slider(R.id.seekLift, R.id.valLift, 0, 150, prefs.lift, " dp", TWO) { prefs.lift = it }
+        slider(R.id.seekWidth, R.id.valWidth, 60, 100, prefs.keyWidth, "%", TWO) { prefs.keyWidth = it }
+        slider(R.id.seekInset, R.id.valInset, 0, 120, prefs.inset, " dp", TWO) { prefs.inset = it }
+        slider(R.id.seekOneWidth, R.id.valOneWidth, 60, 100, prefs.oneKeyWidth, "%", ONE) { prefs.oneKeyWidth = it }
+        slider(R.id.seekOneInset, R.id.valOneInset, 0, 200, prefs.oneInset, " dp", ONE) { prefs.oneInset = it }
+        slider(R.id.seekOneLift, R.id.valOneLift, 0, 200, prefs.oneLift, " dp", ONE) { prefs.oneLift = it }
         toggle(R.id.swDup, prefs.dupMiddle) { prefs.dupMiddle = it }
         toggle(R.id.swSmartTone, prefs.smartTone) { prefs.smartTone = it }
         toggle(R.id.swSuggest, prefs.suggestions) { prefs.suggestions = it }
@@ -80,7 +88,10 @@ class SettingsActivity : Activity() {
         if (intent.getBooleanExtra(EXTRA_REQUEST_MIC, false)) askMicPermission()
     }
 
-    private fun slider(seekId: Int, valId: Int, min: Int, max: Int, value: Int, unit: String, save: (Int) -> Unit) {
+    private fun slider(
+        seekId: Int, valId: Int, min: Int, max: Int, value: Int, unit: String,
+        previewOf: Int = NONE, save: (Int) -> Unit,
+    ) {
         val seek = findViewById<SeekBar>(seekId)
         val label = findViewById<TextView>(valId)
         seek.min = min
@@ -90,10 +101,83 @@ class SettingsActivity : Activity() {
         seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: SeekBar, p: Int, fromUser: Boolean) {
                 label.text = "$p$unit"
+                // Đang xem trước: lưu ngay để bàn phím cập nhật theo thời gian thực
+                if (fromUser && previewCard != null) { save(p); updatePreview() }
             }
-            override fun onStartTrackingTouch(s: SeekBar) {}
+            override fun onStartTrackingTouch(s: SeekBar) {
+                if (previewOf != NONE) enterPreview(s.parent as View, previewOf)
+            }
             override fun onStopTrackingTouch(s: SeekBar) { save(s.progress) }
         })
+    }
+
+    // ================= Xem trước bàn phím =================
+
+    private lateinit var preview: KeyboardView
+    private var previewCard: View? = null
+    private var previewKind = NONE
+    private val hiddenForPreview = ArrayList<View>()
+
+    private fun setupPreview() {
+        preview = KeyboardView(this, object : KeyboardView.Listener {
+            override fun onKey(key: Key) {}
+            override fun onSpaceSwipe(dir: Int) = true
+            override fun onText(s: String) {}
+            override fun onDeleteWord() {}
+            override fun onCursor(steps: Int) {}
+            override fun onVoiceTap(clear: Boolean) {}
+        })
+        preview.setOnTouchListener { _, _ -> true } // chỉ để xem, không gõ được
+        findViewById<FrameLayout>(R.id.previewHolder).addView(
+            preview, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
+        )
+        findViewById<Button>(R.id.btnPreviewDone).setOnClickListener { exitPreview() }
+    }
+
+    /** Ẩn mọi mục khác, chỉ giữ thanh đang chỉnh và hiện bàn phím xem trước bên dưới. */
+    private fun enterPreview(card: View, kind: Int) {
+        previewKind = kind
+        if (previewCard == card) { updatePreview(); return }
+        if (previewCard == null) {
+            val content = findViewById<LinearLayout>(R.id.content)
+            hiddenForPreview.clear()
+            for (i in 0 until content.childCount) {
+                val child = content.getChildAt(i)
+                if (child != card && child.visibility == View.VISIBLE) {
+                    child.visibility = View.GONE
+                    hiddenForPreview += child
+                }
+            }
+            findViewById<View>(R.id.previewBox).visibility = View.VISIBLE
+            moveCredit(android.view.Gravity.TOP or android.view.Gravity.END) // tránh đè lên bàn phím xem trước
+            findViewById<View>(R.id.scroll).post { findViewById<View>(R.id.scroll).scrollTo(0, 0) }
+        }
+        previewCard = card
+        updatePreview()
+    }
+
+    private fun updatePreview() {
+        val mode = if (previewKind == ONE) (if (prefs.oneLeft) Mode.ONE_LEFT else Mode.ONE_RIGHT) else Mode.ARC
+        preview.configure(mode, prefs.layoutConfig(resources.displayMetrics.density), animate = false)
+    }
+
+    private fun exitPreview() {
+        if (previewCard == null) return
+        hiddenForPreview.forEach { it.visibility = View.VISIBLE }
+        hiddenForPreview.clear()
+        previewCard = null
+        findViewById<View>(R.id.previewBox).visibility = View.GONE
+        moveCredit(android.view.Gravity.BOTTOM or android.view.Gravity.END)
+    }
+
+    private fun moveCredit(gravity: Int) {
+        val credit = findViewById<View>(R.id.credit)
+        credit.layoutParams = (credit.layoutParams as FrameLayout.LayoutParams).apply { this.gravity = gravity }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (previewCard != null) exitPreview() else super.onBackPressed()
     }
 
     private fun toggle(id: Int, value: Boolean, save: (Boolean) -> Unit) {

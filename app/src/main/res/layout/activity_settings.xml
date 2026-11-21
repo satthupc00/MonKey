@@ -5,10 +5,12 @@
     android:background="@color/bg">
 
     <ScrollView
+        android:id="@+id/scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
     <LinearLayout
+        android:id="@+id/content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:maxWidth="640dp"
@@ -182,7 +184,28 @@
     </LinearLayout>
     </ScrollView>
 
+    <!-- Xem trước bàn phím khi kéo thanh chỉnh (ẩn các mục khác) -->
+    <LinearLayout
+        android:id="@+id/previewBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <Button
+            android:id="@+id/btnPreviewDone"
+            style="@style/Btn"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:text="Xong" />
+        <FrameLayout
+            android:id="@+id/previewHolder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
     <TextView
+        android:id="@+id/credit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"

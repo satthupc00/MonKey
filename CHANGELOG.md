@@ -1,5 +1,11 @@
 # Nhật ký thay đổi MonKey
 
+## v1.15.0
+**Xem trước bàn phím khi chỉnh**
+
+- Chạm vào các thanh chỉnh độ cong, cỡ phím, bề rộng phím, nhích vào trong, nâng bàn phím (cả hai tay lẫn một tay): Cài đặt ẩn các mục khác, chỉ giữ thanh đang chỉnh và hiện bàn phím xem trước bên dưới, cập nhật ngay khi kéo.
+- Bấm "Xong" hoặc nút Back để quay lại Cài đặt đầy đủ. Giá trị được lưu ngay khi kéo.
+
 ## v1.14.0
 - Cài đặt gọn hơn: bỏ phần hướng dẫn "Cách dùng".
 - Danh sách viết tắt khi nói chuyển sang màn hình riêng: bấm "Danh sách viết tắt (N từ)" để mở, bấm ← hoặc nút Back để quay lại. Khôi phục mặc định có hỏi lại trước khi xoá.
